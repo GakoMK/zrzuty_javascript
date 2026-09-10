@@ -23,7 +23,7 @@
   ];
 
   var mk_mod_state = {
-    selectedId: null, selectedKind: null, isLocked: false, isLeftPanelCollapsed: false, viewMode: "form", clipboardItems: null,
+    selectedId: null, selectedKind: null, isLocked: false, zoom: 1, isLeftPanelCollapsed: false, viewMode: "form", clipboardItems: null,
     dragNode: { active: false, stepId: null, startX: 0, startY: 0, initialX: 0, initialY: 0 },
     linkNode: { active: false, sourceId: null, startX: 0, startY: 0, currentX: 0, currentY: 0 },
     model: { version: "4.3", title: "Model formularza", steps: [] }
@@ -36,14 +36,22 @@
   function mk_mod_escapeHtml(value) { return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
   function mk_mod_clone(value) { return JSON.parse(JSON.stringify(value)); }
 
-  // NOWY ALGORYTM ROUTINGU ORTOGONALNEGO
+  function mk_mod_getCanvasPoint(e) {
+      var canvas = document.getElementById("mk_mod_flow_canvas");
+      if (!canvas) return { x: 0, y: 0 };
+      var rct = canvas.getBoundingClientRect();
+      return {
+          x: (e.clientX - rct.left) / mk_mod_state.zoom,
+          y: (e.clientY - rct.top) / mk_mod_state.zoom
+      };
+  }
+
+  // ALGORYTM ROUTINGU ORTOGONALNEGO
   function mk_mod_getOrthogonalPoints(rect1, rect2) {
       var c1 = {x: rect1.x + rect1.w/2, y: rect1.y + rect1.h/2};
       var c2 = {x: rect2.x + rect2.w/2, y: rect2.y + rect2.h/2};
-
       var dx = c2.x - c1.x;
       var dy = c2.y - c1.y;
-
       var p1, p2;
       var useVertical = Math.abs(dy) > Math.abs(dx) * 1.2;
 
@@ -150,7 +158,6 @@
           if (it.kind === "group") { it.title = it.title || "Nowa grupa"; if (!Array.isArray(it.items)) it.items = []; } 
           else { 
              it.kind = "field"; it.type = it.type || "text"; 
-             // POPRAWKA: Utrzymanie ewentualnej, już wpisanej pustej nazwy (nie nadpisujemy domyślnie "nazwa atrybutu")
              it.label = it.label !== undefined ? it.label : ""; 
              it.isVisible = it.isVisible !== false; it.isEditable = it.isEditable !== false; 
           }
@@ -164,7 +171,6 @@
   }
   
   function mk_mod_createDefaultField(type) { 
-      // POPRAWKA: Tworząc nowe pole ma ono domyślnie pusty label ("") zamiast "nazwa atrybutu"
       var field = { id: mk_mod_uid("field"), kind: "field", type: type, label: "", required: false, placeholder: "", sampleValue: "", options: [], isVisible: true, isEditable: true }; 
       if (type === "select") { field.options = ["Opcja 1", "Opcja 2"]; field.sampleValue = "Opcja 1"; } 
       return field; 
@@ -226,7 +232,26 @@
         if (p0.y === p1.y) lblY -= 14; else lblX += 14;
 
         var selClass = isSelected ? ' mk_mod_selected' : '';
-        overlaysHtml += '<div class="mk_mod_flow_path_overlay' + selClass + '" style="left:' + lblX + 'px; top:' + lblY + 'px;" onclick="window.mk_mod_api.selectPath(event, \'' + path.id + '\')"><span id="mk_mod_path_lbl_' + path.id + '">' + mk_mod_escapeHtml(path.name) + '</span></div>';
+        
+        // POPOVER do edycji ścieżki
+        var inlinePathEditor = "";
+        if (isSelected && !mk_mod_state.isLocked) {
+            var colorOptions = Object.keys(mk_mod_path_colors).map(function(c) {
+                return '<option value="' + c + '" ' + (path.color===c?'selected':'') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
+            }).join('');
+            
+            inlinePathEditor = '<div class="mk_mod_flow_popover" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">' +
+               '<div class="mk_mod_form_row"><label>Etykieta warunku</label><input type="text" class="mk_mod_input" id="mk_mod_live_name" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" value="' + mk_mod_escapeHtml(path.name) + '"></div>' +
+               '<div class="mk_mod_form_row"><label>Kolor ścieżki</label><select class="mk_mod_select" id="mk_mod_live_color" onchange="window.mk_mod_api.liveUpdate(this.id, this.value)">' + colorOptions + '</select></div>' +
+               '<div style="display:flex; gap:8px; margin-top:8px;">' +
+                   '<button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" style="flex:1;" onclick="window.mk_mod_api.closeProps(event)">Zapisz</button>' +
+                   '<button type="button" class="mk_mod_btn mk_btn_border" style="flex:1;" onclick="window.mk_mod_api.closeProps(event)">Zamknij</button>' +
+               '</div>' +
+               '<div style="margin-top:4px;"><button type="button" class="mk_mod_btn mk_btn_border" style="width:100%; color: var(--mk_mod_accent);" onclick="window.mk_mod_api.deleteLive(this)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular icon-ic_fluent__size--20"></i> Usuń ścieżkę</button></div>' +
+               '</div>';
+        }
+
+        overlaysHtml += '<div class="mk_mod_flow_path_overlay' + selClass + '" style="left:' + lblX + 'px; top:' + lblY + 'px;" onclick="window.mk_mod_api.selectPath(event, \'' + path.id + '\')"><span id="mk_mod_path_lbl_' + path.id + '">' + mk_mod_escapeHtml(path.name) + '</span>' + inlinePathEditor + '</div>';
       });
     });
 
@@ -236,38 +261,6 @@
 
     svg.innerHTML = html;
     overlays.innerHTML = overlaysHtml;
-  }
-
-  function mk_mod_renderFlowPanel() {
-      var panel = document.getElementById("mk_mod_flow_properties_container");
-      var title = document.getElementById("mk_mod_flow_panel_title");
-      var body = document.getElementById("mk_mod_flow_panel_body");
-      if (!panel || !body) return;
-
-      if (!mk_mod_state.selectedKind || mk_mod_state.selectedKind === 'item') { panel.classList.remove('mk_mod_open'); return; }
-      
-      panel.classList.add('mk_mod_open');
-      var html = '';
-
-      if (mk_mod_state.selectedKind === 'step') {
-          var step = mk_mod_findStepById(mk_mod_state.selectedId); if(!step) return;
-          if(title) title.innerHTML = '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_settings_20_regular icon-ic_fluent__size--20"></i> Właściwości Kroku';
-          html += '<div class="mk_mod_form_row"><label>Nazwa kroku</label><input type="text" class="mk_mod_input" id="mk_mod_live_name" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" value="' + mk_mod_escapeHtml(step.name) + '"></div>';
-          html += '<div style="margin-top:24px;"><button type="button" class="mk_mod_btn mk_btn_border" style="width:100%; color: var(--mk_mod_accent);" onclick="window.mk_mod_api.deleteLive(this)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular icon-ic_fluent__size--20"></i> Usuń krok</button></div>';
-      } 
-      else if (mk_mod_state.selectedKind === 'path') {
-          var pathData = mk_mod_findPathById(mk_mod_state.selectedId); if(!pathData) return;
-          if(title) title.innerHTML = '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_branch_20_regular icon-ic_fluent__size--20"></i> Właściwości Ścieżki';
-          
-          var colorOptions = Object.keys(mk_mod_path_colors).map(function(c) {
-              return '<option value="' + c + '" ' + (pathData.path.color===c?'selected':'') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
-          }).join('');
-
-          html += '<div class="mk_mod_form_row"><label>Etykieta ścieżki (warunek)</label><input type="text" class="mk_mod_input" id="mk_mod_live_name" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" value="' + mk_mod_escapeHtml(pathData.path.name) + '"></div>';
-          html += '<div class="mk_mod_form_row"><label>Kolor ścieżki</label><select class="mk_mod_select" id="mk_mod_live_color" onchange="window.mk_mod_api.liveUpdate(this.id, this.value)">' + colorOptions + '</select></div>';
-          html += '<div style="margin-top:24px;"><button type="button" class="mk_mod_btn mk_btn_border" style="width:100%; color: var(--mk_mod_accent);" onclick="window.mk_mod_api.deleteLive(this)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular icon-ic_fluent__size--20"></i> Usuń połączenie</button></div>';
-      }
-      body.innerHTML = html;
   }
 
   function mk_mod_renderFlow() {
@@ -281,9 +274,13 @@
       +   '<button class="mk_mod_flow_toolbar_btn" title="Bramka Decyzyjna" onclick="window.mk_mod_api.addFlow(\'gateway\')" style="color: #94a3b8;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_diamond_20_regular icon-ic_fluent__size--20"></i></button>'
       +   '<button class="mk_mod_flow_toolbar_btn" title="Zakończenie Sukces" onclick="window.mk_mod_api.addFlow(\'end_success\')" style="color: #22c55e;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_stop_20_filled icon-ic_fluent__size--20"></i></button>'
       +   '<button class="mk_mod_flow_toolbar_btn" title="Zakończenie Błąd" onclick="window.mk_mod_api.addFlow(\'end_negative\')" style="color: #ef4444;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_warning_20_regular icon-ic_fluent__size--20"></i></button>'
+      +   '<div class="mk_mod_flow_toolbar_divider"></div>'
+      +   '<button class="mk_mod_flow_toolbar_btn" title="Powiększ (+)" onclick="window.mk_mod_api.changeZoom(0.1)" style="color: #475569;">+</button>'
+      +   '<button class="mk_mod_flow_toolbar_btn" title="Pomniejsz (-)" onclick="window.mk_mod_api.changeZoom(-0.1)" style="color: #475569;">-</button>'
+      +   '<button class="mk_mod_flow_toolbar_btn" title="Resetuj Zoom (100%)" onclick="window.mk_mod_api.resetZoom()" style="color: #475569; font-size:11px;">100%</button>'
       + '</div>';
 
-    var html = toolbarHtml + '<svg id="mk_mod_flow_svg" class="mk_mod_flow_svg"></svg><div id="mk_mod_flow_overlays" class="mk_mod_flow_svg"></div>';
+    var html = toolbarHtml + '<div id="mk_mod_flow_canvas" class="mk_mod_flow_canvas" style="transform: scale(' + mk_mod_state.zoom + ');"><svg id="mk_mod_flow_svg" class="mk_mod_flow_svg"></svg><div id="mk_mod_flow_overlays" class="mk_mod_flow_svg"></div>';
     
     mk_mod_state.model.steps.forEach(function(step) {
       var isSelected = mk_mod_state.selectedKind === "step" && mk_mod_state.selectedId === step.id ? " mk_mod_flow_node_selected" : "";
@@ -295,19 +292,38 @@
       if(step.stepType === 'end_negative') iconClass = "icon-ic_fluent_warning_20_regular";
 
       var portHtml = mk_mod_state.isLocked ? '' : '<div class="mk_mod_flow_port" onmousedown="window.mk_mod_api.flowPortMouseDown(event, \'' + mk_mod_escapeHtml(step.id) + '\')" title="Pociągnij aby połączyć"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_routing_20_regular"></i></div>';
+      
+      // Dodana ikonka edycji pojawiająca się na hover
+      var editBtnHtml = mk_mod_state.isLocked ? '' : '<button class="mk_mod_node_edit_btn" onclick="window.mk_mod_api.openNodeEdit(event, \'' + mk_mod_escapeHtml(step.id) + '\')" title="Edytuj właściwości kroku"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_edit_20_regular"></i></button>';
+
+      // POPOVER do edycji właściwości kroku 
+      var inlineEditorHtml = "";
+      if (mk_mod_state.selectedKind === "step" && mk_mod_state.selectedId === step.id && !mk_mod_state.isLocked) {
+          inlineEditorHtml = '<div class="mk_mod_flow_popover" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">' +
+              '<div class="mk_mod_form_row"><label>Nazwa kroku</label><input type="text" class="mk_mod_input" id="mk_mod_live_name" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" value="' + mk_mod_escapeHtml(step.name) + '"></div>' +
+              '<div class="mk_mod_form_row"><label>Opis / Instrukcja dla użytkownika</label><textarea class="mk_mod_textarea" id="mk_mod_live_desc" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" style="min-height:50px;">' + mk_mod_escapeHtml(step.stepDescription) + '</textarea></div>' +
+              '<div style="display:flex; gap:8px; margin-top:8px;">' +
+                  '<button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" style="flex:1;" onclick="window.mk_mod_api.closeProps(event)">Zapisz</button>' +
+                  '<button type="button" class="mk_mod_btn mk_btn_border" style="flex:1;" onclick="window.mk_mod_api.closeProps(event)">Zamknij</button>' +
+              '</div>' +
+              '<div style="margin-top:4px;"><button type="button" class="mk_mod_btn mk_btn_border" style="width:100%; color: var(--mk_mod_accent);" onclick="window.mk_mod_api.deleteLive(this)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular icon-ic_fluent__size--20"></i> Usuń krok</button></div>' +
+              '</div>';
+      }
 
       html += '<div class="' + cssClass + '" style="left:' + step.ui_x + 'px; top:' + step.ui_y + 'px;" data-mk-mod-flow-step="' + mk_mod_escapeHtml(step.id) + '" onmousedown="window.mk_mod_api.flowNodeMouseDown(event, \'' + mk_mod_escapeHtml(step.id) + '\')">'
+            +   editBtnHtml
             +   '<div class="mk_mod_flow_node_icon"><i class="webcon-ui icon-ic_fluent ' + iconClass + ' icon-ic_fluent__size--20"></i></div>'
             +   '<div class="mk_mod_flow_node_content">'
             +     '<div class="mk_mod_flow_node_title" id="mk_mod_node_lbl_' + step.id + '">' + mk_mod_escapeHtml(step.name) + '</div>'
             +   '</div>'
+            +   inlineEditorHtml
             +   portHtml
             + '</div>';
     });
 
+    html += '</div>'; // Koniec canvas
     workspace.innerHTML = html;
     mk_mod_renderFlowPaths();
-    mk_mod_renderFlowPanel();
   }
 
   // ==========================================
@@ -329,7 +345,6 @@
   }
 
   function mk_mod_renderFieldPreview(item, parentGroupId) {
-    // POPRAWKA: Jeśli `item.label` jest puste (""), wyświetl elegancki szary napis [Brak nazwy] aby podgląd nie zniknął.
     var labelHtml = item.label ? mk_mod_escapeHtml(item.label) : '<span style="color:#9ca3af; font-style:italic;">[Brak nazwy]</span>';
     var value = item.sampleValue || "";
     var placeholder = item.placeholder || "";
@@ -366,7 +381,7 @@
         if (item.kind === "group") {
             inlineEditorHtml = '<div class="mk_mod_inline_editor mk_mod_inline_editor_group" onclick="event.stopPropagation()">' +
                 '<div class="mk_mod_form_row"><label>Nazwa grupy</label><input class="mk_mod_input" id="mk_mod_prop_group_title" placeholder="Wpisz nazwę grupy..." value="' + mk_mod_escapeHtml(item.title || "") + '" /></div>' +
-                '<div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" onclick="window.mk_mod_api.saveProps(event)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_save_20_regular icon-ic_fluent__size--20"></i> Zapisz</button><button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.deselectItem(event)">Zamknij</button></div>' +
+                '<div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" onclick="window.mk_mod_api.saveProps(event)">Zapisz</button><button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.deselectItem(event)">Zamknij</button></div>' +
                 '</div>';
         } else {
             inlineEditorHtml = '<div class="mk_mod_inline_editor" onclick="event.stopPropagation()">' +
@@ -377,7 +392,7 @@
                     '<label><input type="checkbox" id="mk_mod_prop_field_visible" ' + (item.isVisible ? "checked" : "") + ' /> Widoczne na kroku</label>' +
                     '<label><input type="checkbox" id="mk_mod_prop_field_editable" ' + (item.isEditable ? "checked" : "") + ' /> Edytowalne</label>' +
                 '</div>' +
-                '<div style="display:flex; gap:8px; margin-top:12px;"><button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" onclick="window.mk_mod_api.saveProps(event)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_save_20_regular icon-ic_fluent__size--20"></i> Zapisz</button><button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.deselectItem(event)">Zamknij</button></div>' +
+                '<div style="display:flex; gap:8px; margin-top:12px;"><button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" onclick="window.mk_mod_api.saveProps(event)">Zapisz</button><button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.deselectItem(event)">Zamknij</button></div>' +
                 '</div>';
         }
     }
@@ -443,6 +458,10 @@
       return '<td class="mk_mod_step_cell"><div class="mk_mod_cell_body">' + html + '</div></td>';
     }).join("");
 
+    var lockBtnStyle = mk_mod_state.isLocked ? 'color: var(--mk_mod_accent);' : 'color: #059669;';
+    var lockBtnIcon = mk_mod_state.isLocked ? '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_lock_open_20_regular icon-ic_fluent__size--20"></i> Odblokuj edycję' : '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_lock_closed_20_regular icon-ic_fluent__size--20"></i> Zablokuj edycję';
+    var lockBtn = '<button type="button" class="mk_mod_btn mk_btn_border" style="' + lockBtnStyle + '" onclick="window.mk_mod_api.toggleLock()">' + lockBtnIcon + '</button>';
+
     mk_mod_root.innerHTML = ''
       + '<div class="mk_mod_app">'
       +   '<div class="mk_mod_header">'
@@ -453,7 +472,7 @@
       +       (!mk_mod_state.isLocked ? '<button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.clearEditor()" style="color:var(--mk_mod_accent);"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular icon-ic_fluent__size--20"></i> Wyczyść edytor</button>' : '')
       +       '<button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.toggleView()"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_swap_20_regular icon-ic_fluent__size--20"></i> Zmień widok (Flow / Formularz)</button>'
       +       '<button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.toggleFullscreen()"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_full_screen_maximize_20_regular icon-ic_fluent__size--20"></i> Pełny ekran</button>'
-      +       '<button type="button" class="mk_mod_btn mk_btn_border ' + (mk_mod_state.isLocked ? '' : 'mk_mod_btn_primary') + '" onclick="window.mk_mod_api.toggleLock()">' + (mk_mod_state.isLocked ? '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_lock_open_20_regular icon-ic_fluent__size--20"></i> Odblokuj edycję' : '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_lock_closed_20_regular icon-ic_fluent__size--20"></i> Zablokuj edycję') + '</button>'
+      +       lockBtn
       +     '</div>'
       +   '</div>'
       +   '<div class="mk_mod_card">'
@@ -486,13 +505,6 @@
       +         '<div class="mk_mod_flow_workspace" id="mk_mod_flow_workspace_wrap" onmousemove="window.mk_mod_api.flowMouseMove(event)" onmouseup="window.mk_mod_api.flowMouseUp(event)" onmouseleave="window.mk_mod_api.flowMouseUp(event)">'
       +            '<div id="mk_mod_flow_workspace_inner" style="width:100%; height:100%;"></div>'
       +         '</div>'
-      +         '<div id="mk_mod_flow_properties_container" class="mk_mod_flow_panel">'
-      +            '<div class="mk_mod_flow_panel_head">'
-      +                '<h3 id="mk_mod_flow_panel_title">Właściwości</h3>'
-      +                '<button class="mk_mod_icon_btn" onclick="window.mk_mod_api.closeProps()" style="color:var(--mk_mod_text);"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_dismiss_20_regular icon-ic_fluent__size--20"></i></button>'
-      +            '</div>'
-      +            '<div id="mk_mod_flow_panel_body" class="mk_mod_flow_panel_body"></div>'
-      +         '</div>'
       +       '</div>'
 
       +     '</div>'
@@ -510,6 +522,16 @@
   // 7. GLOBALNE API DLA INLINE EVENTS
   // ==========================================
   window.mk_mod_api = {
+      changeZoom: function(delta) {
+          mk_mod_state.zoom += delta;
+          if (mk_mod_state.zoom < 0.3) mk_mod_state.zoom = 0.3;
+          if (mk_mod_state.zoom > 2) mk_mod_state.zoom = 2;
+          mk_mod_renderFlow();
+      },
+      resetZoom: function() {
+          mk_mod_state.zoom = 1;
+          mk_mod_renderFlow();
+      },
       toggleView: function() {
           mk_mod_state.viewMode = mk_mod_state.viewMode === "form" ? "flow" : "form";
           mk_mod_state.selectedKind = null; 
@@ -654,9 +676,12 @@
           }
       },
       addFlow: function(type) {
-          var ws = document.getElementById("mk_mod_flow_workspace");
+          var ws = document.getElementById("mk_mod_flow_workspace_wrap");
           var scrollLeft = ws ? ws.scrollLeft : 0; var scrollTop = ws ? ws.scrollTop : 0;
-          var newStep = { id: mk_mod_uid("step"), name: "Nowy krok", stepDescription: "", ui_x: scrollLeft + 200 + Math.floor(Math.random() * 50), ui_y: scrollTop + 100 + Math.floor(Math.random() * 50), stepType: type, items: [], paths: [] };
+          var newX = (scrollLeft + 200) / mk_mod_state.zoom + Math.floor(Math.random() * 50);
+          var newY = (scrollTop + 100) / mk_mod_state.zoom + Math.floor(Math.random() * 50);
+
+          var newStep = { id: mk_mod_uid("step"), name: "Nowy krok", stepDescription: "", ui_x: newX, ui_y: newY, stepType: type, items: [], paths: [] };
           mk_mod_state.model.steps.push(newStep);
           mk_mod_state.selectedKind = 'step'; mk_mod_state.selectedId = newStep.id;
           mk_mod_syncJson(); mk_mod_renderFlow();
@@ -664,18 +689,30 @@
       selectPath: function(e, id) {
           e.stopPropagation();
           mk_mod_state.selectedKind = 'path'; mk_mod_state.selectedId = id;
-          mk_mod_renderFlowPanel();
           document.querySelectorAll('.mk_mod_flow_node').forEach(function(n) { n.classList.remove('mk_mod_flow_node_selected'); });
           document.querySelectorAll('.mk_mod_flow_path_overlay').forEach(function(n) { n.classList.remove('mk_mod_selected'); });
           e.currentTarget.classList.add('mk_mod_selected');
           mk_mod_renderFlowPaths();
       },
-      closeProps: function() {
-          mk_mod_state.selectedKind = null; mk_mod_state.selectedId = null;
-          mk_mod_renderFlowPanel();
+      openNodeEdit: function(e, stepId) {
+          if (mk_mod_state.isLocked) return;
+          e.stopPropagation();
+          mk_mod_state.selectedKind = 'step';
+          mk_mod_state.selectedId = stepId;
+          mk_mod_renderFlow();
+      },
+      closeProps: function(e) {
+          if(e) e.stopPropagation();
+          mk_mod_state.selectedKind = null; 
+          mk_mod_state.selectedId = null;
           document.querySelectorAll('.mk_mod_flow_node_selected').forEach(function(n) { n.classList.remove('mk_mod_flow_node_selected'); });
           document.querySelectorAll('.mk_mod_selected').forEach(function(n) { n.classList.remove('mk_mod_selected'); });
-          mk_mod_renderFlowPaths();
+          
+          if (mk_mod_state.viewMode === 'flow') {
+              mk_mod_renderFlow();
+          } else {
+              mk_mod_render();
+          }
       },
       deleteLive: function(btn) {
           if (btn.getAttribute('data-confirm') !== '1') {
@@ -723,19 +760,22 @@
           if (e.button !== 0) return; 
           e.stopPropagation();
 
-          mk_mod_state.selectedKind = 'step';
-          mk_mod_state.selectedId = stepId;
-          mk_mod_renderFlowPanel();
+          // Ukryj ewentualne inne okienka przed podniesieniem (chyba że kliknięto ten sam krok)
+          if(mk_mod_state.selectedKind === 'step' && mk_mod_state.selectedId !== stepId) {
+              mk_mod_state.selectedKind = null;
+              mk_mod_state.selectedId = null;
+              mk_mod_renderFlow();
+          }
 
           document.querySelectorAll('.mk_mod_flow_node').forEach(function(n){ n.classList.remove('mk_mod_flow_node_selected'); });
           document.querySelectorAll('.mk_mod_flow_path_overlay').forEach(function(n){ n.classList.remove('mk_mod_selected'); });
           e.currentTarget.classList.add('mk_mod_flow_node_selected');
-          mk_mod_renderFlowPaths();
-
+          
+          var pt = mk_mod_getCanvasPoint(e);
           mk_mod_state.dragNode.active = true;
           mk_mod_state.dragNode.stepId = stepId;
-          mk_mod_state.dragNode.startX = e.clientX;
-          mk_mod_state.dragNode.startY = e.clientY;
+          mk_mod_state.dragNode.startX = pt.x;
+          mk_mod_state.dragNode.startY = pt.y;
           var step = mk_mod_findStepById(stepId);
           mk_mod_state.dragNode.initialX = step ? step.ui_x : 0;
           mk_mod_state.dragNode.initialY = step ? step.ui_y : 0;
@@ -746,30 +786,25 @@
           if (e.button !== 0) return;
           e.stopPropagation();
 
-          var wsWrap = document.getElementById("mk_mod_flow_workspace_wrap");
-          var rct = wsWrap.getBoundingClientRect();
+          var pt = mk_mod_getCanvasPoint(e);
           mk_mod_state.linkNode.active = true;
           mk_mod_state.linkNode.sourceId = stepId;
-          mk_mod_state.linkNode.startX = e.clientX - rct.left + wsWrap.scrollLeft;
-          mk_mod_state.linkNode.startY = e.clientY - rct.top + wsWrap.scrollTop;
-          mk_mod_state.linkNode.currentX = mk_mod_state.linkNode.startX;
-          mk_mod_state.linkNode.currentY = mk_mod_state.linkNode.startY;
+          mk_mod_state.linkNode.startX = pt.x;
+          mk_mod_state.linkNode.startY = pt.y;
+          mk_mod_state.linkNode.currentX = pt.x;
+          mk_mod_state.linkNode.currentY = pt.y;
           mk_mod_renderFlowPaths();
       },
       flowMouseMove: function(e) {
           if (!mk_mod_state.dragNode.active && !mk_mod_state.linkNode.active) return;
 
-          var wsWrap = document.getElementById("mk_mod_flow_workspace_wrap");
-          if (!wsWrap) return;
-          var rct = wsWrap.getBoundingClientRect();
-          var currentX = e.clientX - rct.left + wsWrap.scrollLeft;
-          var currentY = e.clientY - rct.top + wsWrap.scrollTop;
+          var pt = mk_mod_getCanvasPoint(e);
 
           if (mk_mod_state.dragNode.active) {
               var step = mk_mod_findStepById(mk_mod_state.dragNode.stepId);
               if (!step) return;
-              var dx = e.clientX - mk_mod_state.dragNode.startX;
-              var dy = e.clientY - mk_mod_state.dragNode.startY;
+              var dx = pt.x - mk_mod_state.dragNode.startX;
+              var dy = pt.y - mk_mod_state.dragNode.startY;
               var newX = mk_mod_state.dragNode.initialX + dx;
               var newY = mk_mod_state.dragNode.initialY + dy;
               if (newX < 0) newX = 0; if (newY < 0) newY = 0;
@@ -780,8 +815,8 @@
           }
 
           if (mk_mod_state.linkNode.active) {
-              mk_mod_state.linkNode.currentX = currentX;
-              mk_mod_state.linkNode.currentY = currentY;
+              mk_mod_state.linkNode.currentX = pt.x;
+              mk_mod_state.linkNode.currentY = pt.y;
               mk_mod_renderFlowPaths();
           }
       },
@@ -814,19 +849,11 @@
       }
   };
 
-  // ==========================================
-  // 9. Funkcja synchronizująca lock formularza wizualnego z formularzem
-  // ==========================================
   window.mk_mod_isFormEditable = function () {
-      if (!window.WEBCON || !WEBCON.Forms || !WEBCON.Forms.FormState) {
-          console.log("WEBCON.Forms.FormState niedostępny");
-          return false;
+      if (typeof WEBCON !== 'undefined' && WEBCON.Forms && WEBCON.Forms.FormState) {
+          return WEBCON.Forms.FormState.IsEditMode;
       }
-      if (WEBCON.Forms.FormState.IsEditMode === true) {
-          return true;
-      } else {
-          return false;
-      }
+      return true; 
   };
 
   // ==========================================
