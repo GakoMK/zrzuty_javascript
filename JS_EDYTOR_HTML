@@ -1,253 +1,3 @@
-/* 
-javascript EDYTOR_HTML potrzebuje technicznego pola EDYTOR_HTML_JSON 
-
-ToDo:
-ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej linii
-```
-<div class="mk_mod_field_line">
-<div class="mk_mod_field_label">Nr Faktury</div>
-<input class="mk_mod_preview_input" type="text" value="" placeholder="" readonly="">
-<div class="mk_mod_field_actions">
-
-<button type="button" class="mk_mod_icon_btn" title="Wyciągnij element" onclick="window.mk_mod_api.extractItem(event, 'mk_mod_field_ym4viceo')">
-<i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_up_left_20_regular"></i>
-</button>
-
-<button type="button" class="mk_mod_icon_btn" title="Usuń pole" onclick="window.mk_mod_api.removeItem(event, 'mk_mod_field_ym4viceo')">
-<i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular"></i>
-</button>
-
-</div></div>
-```
-*/
-
-
-<div id="mk_mod_app"></div>
-
-<style>
-  :root {
-    --mk_mod_bg: #ffffff;
-    --mk_mod_surface: #ffffff;
-    --mk_mod_border: #d8d8d8;
-    --mk_mod_border_strong: #bdbdbd;
-    --mk_mod_text: #202020;
-    --mk_mod_text_muted: #666666;
-    --mk_mod_accent: #991829;
-    --mk_mod_accent_soft: #f8eaed;
-    --mk_mod_radius: 8px;
-    --mk_mod_gap: 14px;
-    --mk_mod_shadow: 0 1px 3px rgba(0,0,0,0.06);
-    --mk_mod_font: "Segoe UI", Arial, sans-serif;
-    --mk_mod_left_col_width: 320px;
-    --mk_mod_left_col_collapsed_width: 28px;
-    --mk_mod_step_col_width: 300px;
-  }
-
-  #mk_mod_app, .mk_mod_app, .mk_mod_app * {
-    box-sizing: border-box;
-    font-family: var(--mk_mod_font);
-    background: transparent;
-  }
-
-  .mk_mod_app:fullscreen, .mk_mod_app:-webkit-full-screen {
-    background: var(--mk_mod_bg);
-    overflow-y: auto;
-    padding: 30px;
-  }
-
-  .mk_mod_app {
-    width: 100%;
-    color: var(--mk_mod_text);
-    background: var(--mk_mod_bg);  
-    border-radius: 10px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .mk_mod_header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  .mk_mod_title_box h2 { margin: 0; color: var(--mk_mod_accent); font-size: 24px; font-weight: 700; }
-  .mk_mod_title_box p { margin: 4px 0 0; color: var(--mk_mod_text_muted); font-size: 13px; }
-
-  .mk_mod_actions { display: flex; flex-wrap: wrap; gap: 8px; }
-
-  .mk_mod_btn, .mk_mod_small_btn, .mk_mod_icon_btn {
-    border: 1px solid var(--mk_mod_border);
-    background: #fff;
-    border-radius: 7px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: .15s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    color: var(--mk_mod_text);
-  }
-
-  .mk_btn_border { border: 1px solid var(--mk_mod_border)!important; }
-  .mk_mod_btn:hover, .mk_mod_small_btn:hover, .mk_mod_icon_btn:hover { border-color: var(--mk_mod_accent); }
-  .mk_mod_btn { padding: 9px 12px; font-size: 13px; }
-  .mk_mod_btn_primary { background: var(--mk_mod_accent); color: #fff; border-color: var(--mk_mod_accent); }
-  .mk_mod_small_btn { padding: 5px 8px; font-size: 12px; }
-  .mk_mod_icon_btn { width: 28px; height: 28px; padding: 0; color: var(--mk_mod_accent); }
-
-  .mk_mod_card {
-    background: var(--mk_mod_surface);
-    border: 1px solid var(--mk_mod_border);
-    border-radius: var(--mk_mod_radius);
-    box-shadow: var(--mk_mod_shadow);
-    overflow: hidden;
-    width: 100%;
-  }
-
-  .mk_mod_card_body { padding: 0px; }
-
-  .mk_mod_palette_grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .mk_mod_palette_item {
-    border: 1px solid var(--mk_mod_border);
-    border-radius: 8px;
-    padding: 10px;
-    background: #fff;
-    cursor: grab;
-    user-select: none;
-  }
-  .mk_mod_palette_item:active { cursor: grabbing; }
-  .mk_mod_palette_item.mk_mod_disabled { opacity: 0.45; cursor: not-allowed; }
-
-  .mk_mod_icon_label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
-  .mk_mod_icon {
-    width: 20px; height: 20px; border-radius: 5px;
-    background: var(--mk_mod_accent_soft); color: var(--mk_mod_accent);
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 12px; flex: 0 0 20px;
-  }
-  .mk_mod_palette_item small, .mk_mod_note { color: var(--mk_mod_text_muted); font-size: 12px; line-height: 1.4; }
-
-  .mk_mod_form_row { display: grid; gap: 6px; margin-bottom: 12px; }
-  .mk_mod_form_row label { font-size: 12px; font-weight: 600; color: var(--mk_mod_text_muted); }
-  .mk_mod_input, .mk_mod_textarea, .mk_mod_select {
-    width: 100%; border: 1px solid var(--mk_mod_border); border-radius: 7px;
-    padding: 9px 10px; font-size: 13px; color: var(--mk_mod_text); background: #fff;
-  }
-  .mk_mod_input:focus, .mk_mod_textarea:focus, .mk_mod_select:focus { border-color: var(--mk_mod_accent); outline: none; }
-  .mk_mod_textarea { min-height: 84px; resize: vertical; }
-  .mk_mod_checkbox_row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 12px; }
-  .mk_mod_property_hint { border: 1px dashed var(--mk_mod_border); border-radius: 8px; padding: 10px; color: var(--mk_mod_text_muted); font-size: 12px; }
-  .mk_mod_property_title { font-size: 14px; font-weight: 700; margin: 0 0 4px; }
-  .mk_mod_divider { border: 0; border-top: 1px solid var(--mk_mod_border); margin: 16px 0; }
-
-  /* --- WIDOK KLASYCZNY FORMULARZA --- */
-  .mk_mod_board_wrap { width: 100%; overflow-x: auto; overflow-y: visible; position: relative; padding: 14px; }
-  .mk_mod_board_table { width: max-content; min-width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .mk_mod_board_table th, .mk_mod_board_table td { border: 1px solid var(--mk_mod_border); vertical-align: top; background: #fff; }
-  .mk_mod_board_table th { padding: 10px 12px; text-align: left; font-size: 14px; font-weight: 700; }
-
-  .mk_mod_library_cell {
-    width: var(--mk_mod_left_col_width); min-width: var(--mk_mod_left_col_width); max-width: var(--mk_mod_left_col_width);
-    position: sticky; left: 0; background: #fff; z-index: 7; box-shadow: 2px 0 0 rgba(0,0,0,0.04); padding: 0;
-  }
-  .mk_mod_board_table th.mk_mod_library_cell { z-index: 9; padding: 10px 12px; }
-  .mk_mod_step_cell { width: var(--mk_mod_step_col_width); min-width: var(--mk_mod_step_col_width); max-width: var(--mk_mod_step_col_width); }
-
-  .mk_mod_board_table col.mk_mod_left_col_group { width: var(--mk_mod_left_col_width); }
-  .mk_mod_board_table.mk_mod_left_collapsed col.mk_mod_left_col_group { width: var(--mk_mod_left_col_collapsed_width); }
-  .mk_mod_board_table.mk_mod_left_collapsed .mk_mod_library_cell { width: var(--mk_mod_left_col_collapsed_width); min-width: var(--mk_mod_left_col_collapsed_width); }
-  .mk_mod_board_table.mk_mod_left_collapsed th.mk_mod_library_cell { overflow: hidden; white-space: nowrap; text-indent: -9999px; padding: 0; }
-
-  .mk_mod_left_col_shell { position: relative; width: 100%; min-height: 100%; }
-  .mk_mod_left_col_toggle {
-    position: absolute; top: 10px; right: -1px; width: 28px; height: 64px;
-    border: 1px solid var(--mk_mod_border); border-right: 0; border-radius: 8px 0 0 8px;
-    background: #fff; color: var(--mk_mod_accent); font-weight: 700; cursor: pointer; z-index: 20;
-  }
-  .mk_mod_left_col_inner { width: 100%; padding: 10px 12px; max-height: 75vh; overflow-y: auto; }
-  .mk_mod_left_col_hidden .mk_mod_left_col_inner { display: none; }
-  .mk_mod_left_col_hidden .mk_mod_left_col_toggle { left: 0; right: auto; border-right: 1px solid var(--mk_mod_border); border-left: 0; border-radius: 0 8px 8px 0; }
-  
-  .mk_mod_collapsed_stub { display: none; width: 100%; height: 100%; min-height: 180px; position: relative; }
-  .mk_mod_left_col_hidden .mk_mod_collapsed_stub { display: block; }
-  .mk_mod_collapsed_stub_text { position: absolute; top: 86px; left: 3px; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 11px; color: var(--mk_mod_text_muted); }
-
-  .mk_mod_cell_body { min-height: 320px; padding: 10px 12px; }
-  .mk_mod_step_head { display: grid; gap: 4px; border-top: 4px solid var(--mk_mod_accent); padding-top: 8px; }
-  .mk_mod_step_head_top { font-size: 12px; color: var(--mk_mod_text_muted); font-weight: 600; }
-  .mk_mod_step_head_name { font-size: 15px; font-weight: 700; color: var(--mk_mod_text); }
-  .mk_mod_step_head_actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-
-  .mk_mod_dropzone { min-height: 14px; border: 2px dashed transparent; border-radius: 7px; margin: 4px 0; }
-  .mk_mod_drag_over { border-color: var(--mk_mod_accent); background: #fdf4f6; }
-  .mk_mod_step_empty { border: 1px dashed var(--mk_mod_border); border-radius: 8px; padding: 12px; font-size: 12px; color: var(--mk_mod_text_muted); }
-
-  .mk_mod_field_box, .mk_mod_group_box { border: 1px solid var(--mk_mod_border); border-radius: 8px; padding: 8px 10px; margin: 6px 0; background: #fff; transition: opacity 0.2s; }
-  .mk_mod_group_box { border-color: #c9a8ae; }
-  .mk_mod_selected { outline: 2px solid var(--mk_mod_accent); outline-offset: 0; }
-
-  /* Style dla widoczności i edytowalności */
-  .mk_mod_field_hidden { opacity: 0.5; background-color: #fafafa; border-style: dashed; }
-  .mk_mod_field_readonly .mk_mod_preview_input,
-  .mk_mod_field_readonly .mk_mod_preview_select,
-  .mk_mod_field_readonly .mk_mod_preview_textarea { background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed; border-color: #e5e7eb; }
-  
-  .mk_mod_badge_hidden, .mk_mod_badge_readonly { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-  .mk_mod_badge_hidden { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
-  .mk_mod_badge_readonly { background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; }
-
-  .mk_mod_field_line { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
-  .mk_mod_field_label { font-size: 13px; font-weight: 600; line-height: 1.3; flex: 1 1 auto; white-space: normal; word-wrap: break-word; min-width: 0; }
-  .mk_mod_preview_input, .mk_mod_preview_select, .mk_mod_preview_textarea { flex: 1 1 60%; width: 100%; border: 1px solid #cfcfcf; border-radius: 6px; padding: 6px 8px; font-size: 12px; background: #fff; }
-  .mk_mod_preview_textarea { min-height: 54px; resize: none; }
-  .mk_mod_preview_checkbox { flex: 1 1 60%; display: flex; align-items: center; gap: 8px; font-size: 12px; }
-  .mk_mod_field_actions { display: flex; gap: 4px; flex: 0 0 auto; }
-  .mk_mod_group_title { font-size: 13px; font-weight: 700; color: var(--mk_mod_text); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .mk_mod_group_inner { margin-top: 8px; padding-left: 10px; border-left: 2px solid #e8d9dc; }
-
-  .mk_mod_lock_badge { display: inline-block; font-size: 11px; font-weight: 700; color: var(--mk_mod_accent); background: var(--mk_mod_accent_soft); border: 1px solid #ebc9d0; border-radius: 999px; padding: 4px 8px; margin-top: 4px; }
-  .mk_mod_view_hidden { display: none !important; }
-
-  /* --- WIDOK PRZEPŁYWU (FLOW) --- */
-  .mk_mod_flow_workspace { position: relative; width: 100%; height: 650px; background: #fbfbfb; background-image: radial-gradient(#e5e5e5 1px, transparent 1px); background-size: 20px 20px; overflow: auto; }
-  .mk_mod_flow_toolbar { position: absolute; top: 16px; left: 16px; background: #fff; border: 1px solid var(--mk_mod_border); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 8px; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-  .mk_mod_flow_toolbar_btn { width: 36px; height: 36px; background: #fff; border: 1px solid transparent; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-  .mk_mod_flow_toolbar_btn:hover { background: var(--mk_mod_accent_soft); border-color: #f1d3d8; }
-
-  .mk_mod_flow_svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; overflow: visible; }
-  .mk_mod_flow_path { stroke-width: 2; fill: none; transition: stroke-width 0.2s; }
-  .mk_mod_flow_path_selected { stroke-width: 4 !important; stroke: var(--mk_mod_accent) !important; }
-  .mk_mod_flow_path_overlay { position: absolute; transform: translate(-50%, -50%); background: #fff; border: 1px solid var(--mk_mod_border); border-radius: 12px; padding: 4px 12px; font-size: 11px; font-weight: 600; color: var(--mk_mod_text); cursor: pointer; pointer-events: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 6; }
-  .mk_mod_flow_path_overlay.mk_mod_selected { border-color: var(--mk_mod_accent); color: var(--mk_mod_accent); box-shadow: 0 0 0 2px var(--mk_mod_accent_soft); }
-
-  .mk_mod_flow_node { position: absolute; min-width: 180px; background: #fff; border-radius: 8px; border: 1px solid var(--mk_mod_border); box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; align-items: center; padding: 10px 14px; cursor: grab; gap: 12px; z-index: 10; }
-  .mk_mod_flow_node_selected { box-shadow: 0 0 0 3px var(--mk_mod_accent_soft), 0 8px 24px rgba(0,0,0,0.1) !important; border-color: var(--mk_mod_accent) !important; z-index: 15; }
-  .mk_mod_flow_node_icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .mk_mod_flow_node_content { display: flex; flex-direction: column; flex-grow: 1; text-align: left; min-width: 0; }
-  .mk_mod_flow_node_title { font-size: 13px; font-weight: 600; color: var(--mk_mod_text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .mk_mod_flow_node_type { font-size: 11px; color: var(--mk_mod_text_muted); margin-top: 2px; }
-
-  .mk_mod_flow_node_start .mk_mod_flow_node_icon { background: #fef3c7; color: #d97706; }
-  .mk_mod_flow_node_intermediate .mk_mod_flow_node_icon { background: #f3f4f6; color: #4b5563; }
-  .mk_mod_flow_node_end_success .mk_mod_flow_node_icon { background: #d1fae5; color: #059669; }
-  .mk_mod_flow_node_end_negative .mk_mod_flow_node_icon { background: #fee2e2; color: #dc2626; }
-  .mk_mod_flow_node_gateway .mk_mod_flow_node_icon { background: #dbeafe; color: #2563eb; border-radius: 6px; transform: rotate(45deg); }
-  .mk_mod_flow_node_gateway .mk_mod_flow_node_icon i { transform: rotate(-45deg); }
-
-  .mk_mod_flow_port { position: absolute; right: -16px; top: calc(50% - 14px); width: 28px; height: 28px; background: #fff; border: 1px solid var(--mk_mod_border_strong); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--mk_mod_text_muted); cursor: crosshair; opacity: 0; transform: scale(0.8); transition: 0.2s; z-index: 20; }
-  .mk_mod_flow_node:hover .mk_mod_flow_port { opacity: 1; transform: scale(1); }
-
-  .mk_mod_flow_panel { position: absolute; top: 10px; right: -360px; width: 320px; bottom: 10px; background: #fff; border: 1px solid var(--mk_mod_border); border-radius: var(--mk_mod_radius); box-shadow: -4px 4px 24px rgba(0,0,0,0.08); transition: right 0.3s; z-index: 50; display: flex; flex-direction: column; }
-  .mk_mod_flow_panel.mk_mod_open { right: 10px; }
-  .mk_mod_flow_panel_head { padding: 16px; border-bottom: 1px solid var(--mk_mod_border); display: flex; align-items: center; justify-content: space-between; background: #fafafa; border-radius: 8px 8px 0 0; }
-  .mk_mod_flow_panel_head h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--mk_mod_text); }
-  .mk_mod_flow_panel_body { padding: 16px; overflow-y: auto; flex: 1; }
-  .mk_mod_btn_danger_confirm { background: #fee2e2 !important; color: #dc2626 !important; border-color: #fca5a5 !important; }
-</style>
-
 <script>
 (function () {
   "use strict";
@@ -255,9 +5,11 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
   // ==========================================
   // 1. ZMIENNE I STAN APLIKACJI
   // ==========================================
-  var mk_mod_webconField = '#{FLD:5978}#';
+  var mk_mod_webconField = '#{FLD:1243}#';
 
-  var mk_mod_path_colors = { 'default': '#9ca3af', 'green': '#10b981', 'blue': '#3b82f6', 'orange': '#f59e0b', 'purple': '#8b5cf6', 'red': '#ef4444' };
+  var mk_mod_path_colors = { 
+      'default': '#9ca3af', 'green': '#84cc16', 'blue': '#0ea5e9', 'red': '#ef4444' 
+  };
 
   var mk_mod_palette = [
     { type: "group", label: "Grupa / Panel", icon: "▣", hint: "Kontener na pola" },
@@ -271,12 +23,7 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
   ];
 
   var mk_mod_state = {
-    selectedId: null,
-    selectedKind: null,
-    isLocked: false,
-    isLeftPanelCollapsed: false,
-    viewMode: "form",
-    clipboardItems: null,
+    selectedId: null, selectedKind: null, isLocked: false, isLeftPanelCollapsed: false, viewMode: "form", clipboardItems: null,
     dragNode: { active: false, stepId: null, startX: 0, startY: 0, initialX: 0, initialY: 0 },
     linkNode: { active: false, sourceId: null, startX: 0, startY: 0, currentX: 0, currentY: 0 },
     model: { version: "4.3", title: "Model formularza", steps: [] }
@@ -286,244 +33,157 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
   // 2. FUNKCJE POMOCNICZE
   // ==========================================
   function mk_mod_uid(prefix) { return "mk_mod_" + prefix + "_" + Math.random().toString(36).slice(2, 10); }
-  
-  function mk_mod_escapeHtml(value) {
-    return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-  
+  function mk_mod_escapeHtml(value) { return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
   function mk_mod_clone(value) { return JSON.parse(JSON.stringify(value)); }
-  
-  function getArrowIntersection(x1, y1, x2, y2, w, h, isGateway) {
-    var dx = x1 - x2; var dy = y1 - y2;
-    var absDx = Math.abs(dx); var absDy = Math.abs(dy);
-    if (absDx === 0 && absDy === 0) return {x: x2, y: y2};
-    var targetW = isGateway ? w * 1.15 : w; var targetH = isGateway ? h * 1.15 : h;
-    var scaleX = (targetW / 2 + 10) / absDx; var scaleY = (targetH / 2 + 10) / absDy;
-    var scale = Math.min(scaleX, scaleY); if (scale > 1) scale = 1;
-    return { x: x2 + dx * scale, y: y2 + dy * scale };
+
+  // NOWY ALGORYTM ROUTINGU ORTOGONALNEGO
+  function mk_mod_getOrthogonalPoints(rect1, rect2) {
+      var c1 = {x: rect1.x + rect1.w/2, y: rect1.y + rect1.h/2};
+      var c2 = {x: rect2.x + rect2.w/2, y: rect2.y + rect2.h/2};
+
+      var dx = c2.x - c1.x;
+      var dy = c2.y - c1.y;
+
+      var p1, p2;
+      var useVertical = Math.abs(dy) > Math.abs(dx) * 1.2;
+
+      if (useVertical) {
+          p1 = { x: c1.x, y: dy > 0 ? rect1.y + rect1.h : rect1.y, dir: dy > 0 ? 'D' : 'U' };
+          p2 = { x: c2.x, y: dy > 0 ? rect2.y : rect2.y + rect2.h, dir: dy > 0 ? 'U' : 'D' };
+      } else {
+          p1 = { x: dx > 0 ? rect1.x + rect1.w : rect1.x, y: c1.y, dir: dx > 0 ? 'R' : 'L' };
+          p2 = { x: dx > 0 ? rect2.x : rect2.x + rect2.w, y: c2.y, dir: dx > 0 ? 'L' : 'R' };
+      }
+
+      var points = [p1];
+      var gap = 30; // Zasięg "łamania"
+
+      if (p1.dir === 'R' && p2.dir === 'L') {
+          if (p1.x + gap <= p2.x) {
+              var midX = p1.x + (p2.x - p1.x)/2;
+              points.push({x: midX, y: p1.y}); points.push({x: midX, y: p2.y});
+          } else {
+              var midY = (p1.y < p2.y) ? Math.max(rect1.y+rect1.h, rect2.y+rect2.h) + gap : Math.min(rect1.y, rect2.y) - gap;
+              points.push({x: p1.x + gap, y: p1.y}); points.push({x: p1.x + gap, y: midY});
+              points.push({x: p2.x - gap, y: midY}); points.push({x: p2.x - gap, y: p2.y});
+          }
+      }
+      else if (p1.dir === 'L' && p2.dir === 'R') {
+          if (p1.x - gap >= p2.x) {
+              var midX = p2.x + (p1.x - p2.x)/2;
+              points.push({x: midX, y: p1.y}); points.push({x: midX, y: p2.y});
+          } else {
+              var midY = (p1.y < p2.y) ? Math.max(rect1.y+rect1.h, rect2.y+rect2.h) + gap : Math.min(rect1.y, rect2.y) - gap;
+              points.push({x: p1.x - gap, y: p1.y}); points.push({x: p1.x - gap, y: midY});
+              points.push({x: p2.x + gap, y: midY}); points.push({x: p2.x + gap, y: p2.y});
+          }
+      }
+      else if (p1.dir === 'D' && p2.dir === 'U') {
+          if (p1.y + gap <= p2.y) {
+              var midY = p1.y + (p2.y - p1.y)/2;
+              points.push({x: p1.x, y: midY}); points.push({x: p2.x, y: midY});
+          } else {
+              var midX = (p1.x < p2.x) ? Math.max(rect1.x+rect1.w, rect2.x+rect2.w) + gap : Math.min(rect1.x, rect2.x) - gap;
+              points.push({x: p1.x, y: p1.y + gap}); points.push({x: midX, y: p1.y + gap});
+              points.push({x: midX, y: p2.y - gap}); points.push({x: p2.x, y: p2.y - gap});
+          }
+      }
+      else if (p1.dir === 'U' && p2.dir === 'D') {
+          if (p1.y - gap >= p2.y) {
+              var midY = p2.y + (p1.y - p2.y)/2;
+              points.push({x: p1.x, y: midY}); points.push({x: p2.x, y: midY});
+          } else {
+              var midX = (p1.x < p2.x) ? Math.max(rect1.x+rect1.w, rect2.x+rect2.w) + gap : Math.min(rect1.x, rect2.x) - gap;
+              points.push({x: p1.x, y: p1.y - gap}); points.push({x: midX, y: p1.y - gap});
+              points.push({x: midX, y: p2.y + gap}); points.push({x: p2.x, y: p2.y + gap});
+          }
+      }
+      points.push(p2);
+      return points;
+  }
+
+  function mk_mod_pointsToSvgPath(points, radius) {
+      if (!points || points.length < 2) return "";
+      var d = "M " + points[0].x + " " + points[0].y;
+
+      for (var i = 1; i < points.length - 1; i++) {
+          var p0 = points[i - 1], p1 = points[i], p2 = points[i + 1];
+          var dx0 = p0.x - p1.x, dy0 = p0.y - p1.y, len0 = Math.sqrt(dx0*dx0 + dy0*dy0);
+          var dx2 = p2.x - p1.x, dy2 = p2.y - p1.y, len2 = Math.sqrt(dx2*dx2 + dy2*dy2);
+          var r = Math.min(radius, len0/2, len2/2);
+
+          if (r > 0) {
+              var startX = p1.x + (dx0 / len0) * r, startY = p1.y + (dy0 / len0) * r;
+              var endX = p1.x + (dx2 / len2) * r, endY = p1.y + (dy2 / len2) * r;
+              d += " L " + startX + " " + startY + " Q " + p1.x + " " + p1.y + " " + endX + " " + endY;
+          } else {
+              d += " L " + p1.x + " " + p1.y;
+          }
+      }
+      d += " L " + points[points.length - 1].x + " " + points[points.length - 1].y;
+      return d;
   }
 
   // ==========================================
   // 3. LOGIKA MODELU DANYCH
   // ==========================================
+  function mk_mod_removeStep(stepId) {
+      mk_mod_state.model.steps.forEach(function(step) { step.paths = step.paths.filter(function(path) { return path.targetStepId !== stepId; }); });
+      mk_mod_state.model.steps = mk_mod_state.model.steps.filter(function(step) { return step.id !== stepId; });
+      mk_mod_state.selectedId = null; mk_mod_state.selectedKind = null; mk_mod_syncJson();
+  }
+  function mk_mod_removeSelectedPath() {
+      var pathId = mk_mod_state.selectedId;
+      mk_mod_state.model.steps.forEach(function(step) { step.paths = step.paths.filter(function(path) { return path.id !== pathId; }); });
+      mk_mod_state.selectedId = null; mk_mod_state.selectedKind = null; mk_mod_syncJson();
+  }
   function mk_mod_normalizeModel(raw) {
     if (!raw || typeof raw !== "object" || !Array.isArray(raw.steps)) return null;
-    if (raw.steps.length === 0) {
-        raw.steps.push({ id: mk_mod_uid("step"), name: "Krok Startowy", stepDescription: "", ui_x: 100, ui_y: 100, stepType: "start", items: [], paths: [] });
-    }
+    if (raw.steps.length === 0) raw.steps.push({ id: mk_mod_uid("step"), name: "Krok Startowy", stepDescription: "", ui_x: 100, ui_y: 100, stepType: "start", items: [], paths: [] });
     raw.steps.forEach(function (step, index) {
       if (!step.id) step.id = mk_mod_uid("step");
-      step.name = step.name || "Nowy krok";
-      step.stepDescription = step.stepDescription || "";
-      step.ui_x = typeof step.ui_x === "number" ? step.ui_x : (index * 240 + 100);
-      step.ui_y = typeof step.ui_y === "number" ? step.ui_y : 100;
-      step.stepType = step.stepType || "intermediate";
-      if (!Array.isArray(step.items)) step.items = [];
-      if (!Array.isArray(step.paths)) step.paths = [];
-
+      step.name = step.name || "Nowy krok"; step.stepDescription = step.stepDescription || "";
+      step.ui_x = typeof step.ui_x === "number" ? step.ui_x : (index * 240 + 100); step.ui_y = typeof step.ui_y === "number" ? step.ui_y : 100;
+      step.stepType = step.stepType || "intermediate"; if (!Array.isArray(step.items)) step.items = []; if (!Array.isArray(step.paths)) step.paths = [];
       step.items.forEach(function(it) {
           if (!it.id) it.id = mk_mod_uid(it.kind || "item");
-          if (it.kind === "group") {
-             it.title = it.title || "Nowa grupa";
-             if (!Array.isArray(it.items)) it.items = [];
-          } else {
-             it.kind = "field"; it.type = it.type || "text"; it.label = it.label || "nazwa atrybutu";
-             it.required = !!it.required; it.placeholder = it.placeholder || ""; it.sampleValue = it.sampleValue || "";
-             it.isVisible = it.isVisible !== false; // domyślnie true
-             it.isEditable = it.isEditable !== false; // domyślnie true
-             if (!Array.isArray(it.options)) it.options = [];
+          if (it.kind === "group") { it.title = it.title || "Nowa grupa"; if (!Array.isArray(it.items)) it.items = []; } 
+          else { 
+             it.kind = "field"; it.type = it.type || "text"; 
+             // POPRAWKA: Utrzymanie ewentualnej, już wpisanej pustej nazwy (nie nadpisujemy domyślnie "nazwa atrybutu")
+             it.label = it.label !== undefined ? it.label : ""; 
+             it.isVisible = it.isVisible !== false; it.isEditable = it.isEditable !== false; 
           }
       });
       step.paths = step.paths.map(function (path) {
         if (typeof path === "string") return { id: mk_mod_uid("path"), name: path, assignee: "", action: "", targetStepId: null, color: 'default' };
-        return {
-          id: path.id || mk_mod_uid("path"), name: path.name || "Nowa ścieżka", assignee: path.assignee || "",
-          action: path.action || "", targetStepId: path.targetStepId || null, color: mk_mod_path_colors[path.color] ? path.color : 'default'
-        };
+        return { id: path.id || mk_mod_uid("path"), name: path.name || "Nowa ścieżka", action: path.action || "", targetStepId: path.targetStepId || null, color: mk_mod_path_colors[path.color] ? path.color : 'default' };
       });
     });
-    raw.version = raw.version || "4.3";
-    raw.title = raw.title || "Model formularza";
-    return raw;
+    raw.version = raw.version || "4.3"; return raw;
   }
-
-  function mk_mod_createDefaultField(type) {
-    var field = { id: mk_mod_uid("field"), kind: "field", type: type, label: "nazwa atrybutu", required: false, placeholder: "", sampleValue: "", options: [], isVisible: true, isEditable: true };
-    if (type === "select") { field.options = ["Opcja 1", "Opcja 2"]; field.sampleValue = "Opcja 1"; }
-    if (type === "date") field.sampleValue = "2026-03-06";
-    if (type === "checkbox") field.sampleValue = "true";
-    if (type === "person") field.sampleValue = "Jan Kowalski";
-    return field;
+  
+  function mk_mod_createDefaultField(type) { 
+      // POPRAWKA: Tworząc nowe pole ma ono domyślnie pusty label ("") zamiast "nazwa atrybutu"
+      var field = { id: mk_mod_uid("field"), kind: "field", type: type, label: "", required: false, placeholder: "", sampleValue: "", options: [], isVisible: true, isEditable: true }; 
+      if (type === "select") { field.options = ["Opcja 1", "Opcja 2"]; field.sampleValue = "Opcja 1"; } 
+      return field; 
   }
   
   function mk_mod_createDefaultGroup() { return { id: mk_mod_uid("group"), kind: "group", title: "Nowa grupa", items: [] }; }
-
   function mk_mod_getWebconValue() { try { if (typeof GetValue === "function") return GetValue(mk_mod_webconField) || ""; } catch (e) {} return ""; }
   function mk_mod_setWebconValue(text) { try { if (typeof SetValue === "function") SetValue(mk_mod_webconField, text || ""); } catch (e) {} }
-
-  function mk_mod_loadModelFromWebcon() {
-    var raw = mk_mod_getWebconValue();
-    if (!raw || !String(raw).trim()) { mk_mod_state.model = mk_mod_normalizeModel({ steps: [] }); return; }
-    try {
-      var parsed = JSON.parse(raw);
-      var normalized = mk_mod_normalizeModel(parsed);
-      if (normalized) {
-        if (typeof parsed.isLocked === "boolean") mk_mod_state.isLocked = parsed.isLocked;
-        if (typeof parsed.viewMode === "string") mk_mod_state.viewMode = parsed.viewMode;
-        mk_mod_state.model = normalized;
-      }
-    } catch (error) { mk_mod_state.model = mk_mod_normalizeModel({ steps: [] }); }
-  }
-
-  function mk_mod_syncJson() {
-    var payload = mk_mod_clone(mk_mod_state.model);
-    payload.isLocked = mk_mod_state.isLocked;
-    payload.viewMode = mk_mod_state.viewMode;
-    mk_mod_setWebconValue(JSON.stringify(payload, null, 2));
-  }
-
-  function mk_mod_regenerateAllIdsForItem(item) {
-    item.id = mk_mod_uid(item.kind || "item");
-    if (item.kind === "group" && Array.isArray(item.items)) {
-      item.items.forEach(function (child) { mk_mod_regenerateAllIdsForItem(child); });
-    }
-  }
-
+  function mk_mod_loadModelFromWebcon() { var raw = mk_mod_getWebconValue(); if (!raw || !String(raw).trim()) { mk_mod_state.model = mk_mod_normalizeModel({ steps: [] }); return; } try { var parsed = JSON.parse(raw); var normalized = mk_mod_normalizeModel(parsed); if (normalized) { if (typeof parsed.viewMode === "string") mk_mod_state.viewMode = parsed.viewMode; mk_mod_state.model = normalized; } } catch (error) { mk_mod_state.model = mk_mod_normalizeModel({ steps: [] }); } }
+  function mk_mod_syncJson() { var payload = mk_mod_clone(mk_mod_state.model); payload.viewMode = mk_mod_state.viewMode; mk_mod_setWebconValue(JSON.stringify(payload, null, 2)); }
+  function mk_mod_regenerateAllIdsForItem(item) { item.id = mk_mod_uid(item.kind || "item"); if (item.kind === "group" && Array.isArray(item.items)) { item.items.forEach(function (child) { mk_mod_regenerateAllIdsForItem(child); }); } }
   function mk_mod_findStepById(stepId) { return mk_mod_state.model.steps.find(function (step) { return step.id === stepId; }) || null; }
-  function mk_mod_findItemById(id, items, stepId, parentGroupId) {
-    items = items || [];
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i];
-      if (item.id === id) return { item: item, array: items, index: i, stepId: stepId || null, parentGroupId: parentGroupId || null };
-      if (item.kind === "group" && Array.isArray(item.items)) {
-        var nested = mk_mod_findItemById(id, item.items, stepId, item.id);
-        if (nested) return nested;
-      }
-    }
-    return null;
-  }
-  function mk_mod_findAnyItem(id) {
-    for (var s = 0; s < mk_mod_state.model.steps.length; s++) {
-      var found = mk_mod_findItemById(id, mk_mod_state.model.steps[s].items, mk_mod_state.model.steps[s].id, null);
-      if (found) return found;
-    }
-    return null;
-  }
-  function mk_mod_findPathById(pathId) {
-    for (var i = 0; i < mk_mod_state.model.steps.length; i++) {
-      var step = mk_mod_state.model.steps[i];
-      for (var j = 0; j < step.paths.length; j++) {
-        if (step.paths[j].id === pathId) return { step: step, path: step.paths[j], index: j };
-      }
-    }
-    return null;
-  }
-  function mk_mod_getTargetArray(stepId, containerId) {
-    var step = mk_mod_findStepById(stepId);
-    if (!step) return null;
-    if (!containerId || containerId === "root") return step.items;
-    var found = mk_mod_findItemById(containerId, step.items, step.id, null);
-    if (found && found.item.kind === "group") return found.item.items;
-    return null;
-  }
+  function mk_mod_findItemById(id, items, stepId, parentGroupId) { items = items || []; for (var i = 0; i < items.length; i++) { var item = items[i]; if (item.id === id) return { item: item, array: items, index: i, stepId: stepId || null, parentGroupId: parentGroupId || null }; if (item.kind === "group" && Array.isArray(item.items)) { var nested = mk_mod_findItemById(id, item.items, stepId, item.id); if (nested) return nested; } } return null; }
+  function mk_mod_findAnyItem(id) { for (var s = 0; s < mk_mod_state.model.steps.length; s++) { var found = mk_mod_findItemById(id, mk_mod_state.model.steps[s].items, mk_mod_state.model.steps[s].id, null); if (found) return found; } return null; }
+  function mk_mod_findPathById(pathId) { for (var i = 0; i < mk_mod_state.model.steps.length; i++) { var step = mk_mod_state.model.steps[i]; for (var j = 0; j < step.paths.length; j++) { if (step.paths[j].id === pathId) return { step: step, path: step.paths[j], index: j }; } } return null; }
+  function mk_mod_getTargetArray(stepId, containerId) { var step = mk_mod_findStepById(stepId); if (!step) return null; if (!containerId || containerId === "root") return step.items; var found = mk_mod_findItemById(containerId, step.items, step.id, null); if (found && found.item.kind === "group") return found.item.items; return null; }
 
   // ==========================================
-  // 4. FUNKCJE RENDERUJĄCE (POMOCNICZE)
-  // ==========================================
-  function mk_mod_renderPalette() {
-    return mk_mod_palette.map(function (item) {
-      var extraClass = mk_mod_state.isLocked ? " mk_mod_disabled" : "";
-      return '<div class="mk_mod_palette_item' + extraClass + '" ' + (mk_mod_state.isLocked ? '' : 'draggable="true" ondragstart="window.mk_mod_api.dragStartPalette(event, \'' + item.type + '\')"') + '><div class="mk_mod_icon_label"><span class="mk_mod_icon">' + mk_mod_escapeHtml(item.icon) + '</span><span>' + mk_mod_escapeHtml(item.label) + '</span></div><small>' + mk_mod_escapeHtml(item.hint) + '</small></div>';
-    }).join("");
-  }
-
-  function mk_mod_renderFieldPreview(item, parentGroupId) {
-    var label = mk_mod_escapeHtml(item.label || "nazwa atrybutu");
-    var value = item.sampleValue || "";
-    var placeholder = item.placeholder || "";
-    var requiredMark = item.required ? ' <span style="color:#991829">*</span>' : '';
-    
-    var hiddenBadge = !item.isVisible ? '<span class="mk_mod_badge_hidden" title="Pole ukryte na tym kroku"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_eye_off_20_regular"></i> Ukryte</span>' : '';
-    var readonlyBadge = (!item.isEditable && item.isVisible) ? '<span class="mk_mod_badge_readonly" title="Pole tylko do odczytu"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_lock_20_regular"></i> Tylko odczyt</span>' : '';
-
-    var extractBtn = (parentGroupId && !mk_mod_state.isLocked) ? '<button type="button" class="mk_mod_icon_btn" title="Wyciągnij element" onclick="window.mk_mod_api.extractItem(event, \'' + item.id + '\')"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_up_left_20_regular"></i></button>' : '';
-    var removeBtn = mk_mod_state.isLocked ? '' : '<button type="button" class="mk_mod_icon_btn" title="Usuń pole" onclick="window.mk_mod_api.removeItem(event, \'' + item.id + '\')"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular"></i></button>';
-    var actionsHtml = '<div class="mk_mod_field_actions">' + extractBtn + removeBtn + '</div>';
-
-    var fullLabel = label + requiredMark + hiddenBadge + readonlyBadge;
-
-    if (item.type === "textarea") return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><textarea class="mk_mod_preview_textarea" placeholder="' + mk_mod_escapeHtml(placeholder) + '" readonly>' + mk_mod_escapeHtml(value) + '</textarea>' + actionsHtml + '</div>';
-    if (item.type === "number") return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><input class="mk_mod_preview_input" type="number" value="' + mk_mod_escapeHtml(value) + '" placeholder="' + mk_mod_escapeHtml(placeholder) + '" readonly />' + actionsHtml + '</div>';
-    if (item.type === "date") return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><input class="mk_mod_preview_input" type="date" value="' + mk_mod_escapeHtml(value) + '" readonly />' + actionsHtml + '</div>';
-    if (item.type === "select") {
-      var options = (item.options && item.options.length ? item.options : ["Opcja 1"]).map(function (opt) { return '<option>' + mk_mod_escapeHtml(opt) + '</option>'; }).join("");
-      return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><select class="mk_mod_preview_select" disabled>' + options + '</select>' + actionsHtml + '</div>';
-    }
-    if (item.type === "checkbox") return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><label class="mk_mod_preview_checkbox"><input type="checkbox" disabled /></label>' + actionsHtml + '</div>';
-    return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><input class="mk_mod_preview_input" type="text" value="' + mk_mod_escapeHtml(value) + '" placeholder="' + mk_mod_escapeHtml(placeholder) + '" readonly />' + actionsHtml + '</div>';
-  }
-
-  function mk_mod_renderItem(item, parentGroupId) {
-    var isSelected = (mk_mod_state.selectedKind === "item" && mk_mod_state.selectedId === item.id) ? " mk_mod_selected" : "";
-    var dragAttr = mk_mod_state.isLocked ? "" : ' draggable="true" ondragstart="window.mk_mod_api.dragStartMove(event, \'' + item.id + '\')"';
-    var clickAttr = ' onclick="window.mk_mod_api.selectItem(event, \'' + item.id + '\')"';
-    
-    if (item.kind === "group") {
-      var parentInfo = mk_mod_findAnyItem(item.id);
-      var currentStepId = parentInfo ? parentInfo.stepId : "";
-      var innerHtml = "";
-
-      if (!item.items.length) {
-        innerHtml = (!mk_mod_state.isLocked ? '<div class="mk_mod_dropzone" ondragover="window.mk_mod_api.dragOver(event)" ondragleave="window.mk_mod_api.dragLeave(event)" ondrop="window.mk_mod_api.drop(event, \'' + currentStepId + '\', \'' + item.id + '\', 0)"></div>' : '')
-          + '<div class="mk_mod_step_empty">Upuść tutaj pole (nie grupę).</div>';
-      } else {
-        innerHtml = item.items.map(function (child, idx) {
-          return (!mk_mod_state.isLocked ? '<div class="mk_mod_dropzone" ondragover="window.mk_mod_api.dragOver(event)" ondragleave="window.mk_mod_api.dragLeave(event)" ondrop="window.mk_mod_api.drop(event, \'' + currentStepId + '\', \'' + item.id + '\', ' + idx + ')"></div>' : '')
-            + mk_mod_renderItem(child, item.id);
-        }).join("");
-        if (!mk_mod_state.isLocked) {
-          innerHtml += '<div class="mk_mod_dropzone" ondragover="window.mk_mod_api.dragOver(event)" ondragleave="window.mk_mod_api.dragLeave(event)" ondrop="window.mk_mod_api.drop(event, \'' + currentStepId + '\', \'' + item.id + '\', ' + item.items.length + ')"></div>';
-        }
-      }
-
-      var extractGroupBtn = (parentGroupId && !mk_mod_state.isLocked) ? '<button type="button" class="mk_mod_icon_btn" title="Wyciągnij Grupę" onclick="window.mk_mod_api.extractItem(event, \'' + item.id + '\')"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_up_left_20_regular"></i></button>' : '';
-      var removeGroupBtn = mk_mod_state.isLocked ? '' : '<button type="button" class="mk_mod_icon_btn" title="Usuń kontener" onclick="window.mk_mod_api.removeItem(event, \'' + item.id + '\')"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular"></i></button>';
-
-      return '<div class="mk_mod_group_box' + isSelected + '"' + dragAttr + clickAttr + '><div class="mk_mod_group_title"><span>' + mk_mod_escapeHtml(item.title || "Nowa grupa") + '</span><div style="display: flex; gap: 4px;">' + extractGroupBtn + removeGroupBtn + '</div></div><div class="mk_mod_group_inner">' + innerHtml + '</div></div>';
-    }
-
-    var hiddenClass = !item.isVisible ? " mk_mod_field_hidden" : "";
-    var readonlyClass = !item.isEditable ? " mk_mod_field_readonly" : "";
-
-    return '<div class="mk_mod_field_box' + isSelected + hiddenClass + readonlyClass + '"' + dragAttr + clickAttr + '>' + mk_mod_renderFieldPreview(item, parentGroupId) + '</div>';
-  }
-
-  function mk_mod_renderLeftCellContent() {
-    var collapsedClass = mk_mod_state.isLeftPanelCollapsed ? ' mk_mod_left_col_hidden' : '';
-    var toggleIcon = mk_mod_state.isLeftPanelCollapsed ? '»' : '«';
-    
-    var libraryHtml = mk_mod_state.isLocked ? '<div class="mk_mod_note">Biblioteka ukryta w trybie podglądu.</div>' : '<div class="mk_mod_palette_grid">' + mk_mod_renderPalette() + '</div>';
-    var propsHtml = '';
-
-    if (mk_mod_state.selectedKind === 'item' && mk_mod_state.selectedId) {
-        var found = mk_mod_findAnyItem(mk_mod_state.selectedId);
-        if (found && found.item.kind === "group") {
-            propsHtml = '<div class="mk_mod_form_row"><div class="mk_mod_property_title"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_settings_20_regular icon-ic_fluent__size--20"></i> Właściwości grupy</div></div><div class="mk_mod_form_row"><label>Nazwa grupy</label><input class="mk_mod_input" id="mk_mod_prop_group_title" value="' + mk_mod_escapeHtml(found.item.title || "") + '" /></div><div style="display:flex; gap:8px; margin-top:16px;"><button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" onclick="window.mk_mod_api.saveProps()"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_save_20_regular icon-ic_fluent__size--20"></i> Zapisz</button><button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.deselectItem()">Zamknij</button></div>';
-        } else if (found) {
-            propsHtml = '<div class="mk_mod_form_row"><div class="mk_mod_property_title"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_settings_20_regular icon-ic_fluent__size--20"></i> Właściwości pola</div></div><div class="mk_mod_form_row"><label>Nazwa atrybutu</label><input class="mk_mod_input" id="mk_mod_prop_field_label" value="' + mk_mod_escapeHtml(found.item.label || "") + '" /></div><div class="mk_mod_form_row"><label>Opis działania (placeholder)</label><textarea class="mk_mod_textarea" id="mk_mod_prop_field_description">' + mk_mod_escapeHtml(found.item.placeholder || "") + '</textarea></div><div class="mk_mod_checkbox_row"><label for="mk_mod_prop_field_required">Pole wymagane</label><input type="checkbox" id="mk_mod_prop_field_required" ' + (found.item.required ? "checked" : "") + ' /></div><div class="mk_mod_checkbox_row"><label for="mk_mod_prop_field_visible">Pole widoczne na kroku</label><input type="checkbox" id="mk_mod_prop_field_visible" ' + (found.item.isVisible ? "checked" : "") + ' /></div><div class="mk_mod_checkbox_row"><label for="mk_mod_prop_field_editable">Pole edytowalne</label><input type="checkbox" id="mk_mod_prop_field_editable" ' + (found.item.isEditable ? "checked" : "") + ' /></div><div style="display:flex; gap:8px; margin-top:16px;"><button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" onclick="window.mk_mod_api.saveProps()"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_save_20_regular icon-ic_fluent__size--20"></i> Zapisz</button><button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.deselectItem()">Zamknij</button></div>';
-        }
-    }
-
-    var contentHtml = libraryHtml;
-    if (propsHtml) {
-        contentHtml += '<hr class="mk_mod_divider" />' + propsHtml;
-    }
-
-    return '<div class="mk_mod_left_col_shell' + collapsedClass + '"><button type="button" class="mk_mod_left_col_toggle" onclick="window.mk_mod_api.toggleLeftPanel()">' + toggleIcon + '</button><div class="mk_mod_left_col_inner">' + contentHtml + '</div><div class="mk_mod_collapsed_stub"><div class="mk_mod_collapsed_stub_text">Narzędzia</div></div></div>';
-  }
-
-  // ==========================================
-  // 5. FUNKCJE RENDERUJĄCE FLOW
+  // 4. RENDEROWANIE FLOW Z NOWYMI ŚCIEŻKAMI
   // ==========================================
   function mk_mod_renderFlowPaths() {
     var svg = document.getElementById("mk_mod_flow_svg");
@@ -532,7 +192,7 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
     
     var html = '<defs>';
     Object.keys(mk_mod_path_colors).forEach(function(key) {
-        html += '<marker id="mk_mod_arrow_' + key + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="' + mk_mod_path_colors[key] + '" /></marker>';
+        html += '<marker id="mk_mod_arrow_' + key + '" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="' + mk_mod_path_colors[key] + '" /></marker>';
     });
     html += '</defs>';
     var overlaysHtml = '';
@@ -540,31 +200,38 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
     mk_mod_state.model.steps.forEach(function(step) {
       var el1 = document.querySelector('[data-mk-mod-flow-step="' + step.id + '"]');
       if (!el1) return;
-      var x1 = step.ui_x + el1.offsetWidth / 2; var y1 = step.ui_y + el1.offsetHeight / 2;
+      var rect1 = { x: step.ui_x, y: step.ui_y, w: el1.offsetWidth, h: el1.offsetHeight };
 
       step.paths.forEach(function(path) {
         if (!path.targetStepId) return;
         var targetStep = mk_mod_findStepById(path.targetStepId); if (!targetStep) return;
         var el2 = document.querySelector('[data-mk-mod-flow-step="' + targetStep.id + '"]'); if (!el2) return;
 
-        var x2 = targetStep.ui_x + el2.offsetWidth / 2; var y2 = targetStep.ui_y + el2.offsetHeight / 2;
-        var W = el2.offsetWidth; var H = el2.offsetHeight;
-        var intPt = getArrowIntersection(x1, y1, x2, y2, W, H, targetStep.stepType === 'gateway');
+        var rect2 = { x: targetStep.ui_x, y: targetStep.ui_y, w: el2.offsetWidth, h: el2.offsetHeight };
+        
+        var points = mk_mod_getOrthogonalPoints(rect1, rect2);
+        var pathD = mk_mod_pointsToSvgPath(points, 12); 
 
         var isSelected = mk_mod_state.selectedKind === "path" && mk_mod_state.selectedId === path.id;
         var strokeColor = mk_mod_path_colors[path.color] || mk_mod_path_colors['default'];
         var className = isSelected ? "mk_mod_flow_path mk_mod_flow_path_selected" : "mk_mod_flow_path";
 
-        html += '<path class="' + className + '" d="M ' + x1 + ' ' + y1 + ' L ' + intPt.x + ' ' + intPt.y + '" stroke="' + strokeColor + '" marker-end="url(#mk_mod_arrow_' + path.color + ')" />';
+        html += '<circle cx="' + points[0].x + '" cy="' + points[0].y + '" r="3" class="mk_mod_flow_port_dot" stroke="' + strokeColor + '" />';
+        html += '<path class="' + className + '" d="' + pathD + '" stroke="' + strokeColor + '" marker-end="url(#mk_mod_arrow_' + path.color + ')" />';
+        html += '<circle cx="' + points[points.length-1].x + '" cy="' + points[points.length-1].y + '" r="3" class="mk_mod_flow_port_dot" stroke="' + strokeColor + '" />';
         
-        var mx = (x1 + intPt.x) / 2; var my = (y1 + intPt.y) / 2;
+        var p0 = points[0], p1 = points[1] || points[0];
+        var lblX = (p0.x + p1.x) / 2;
+        var lblY = (p0.y + p1.y) / 2;
+        if (p0.y === p1.y) lblY -= 14; else lblX += 14;
+
         var selClass = isSelected ? ' mk_mod_selected' : '';
-        overlaysHtml += '<div class="mk_mod_flow_path_overlay' + selClass + '" style="left:' + mx + 'px; top:' + my + 'px;" onclick="window.mk_mod_api.selectPath(event, \'' + path.id + '\')"><span id="mk_mod_path_lbl_' + path.id + '">' + mk_mod_escapeHtml(path.name) + '</span></div>';
+        overlaysHtml += '<div class="mk_mod_flow_path_overlay' + selClass + '" style="left:' + lblX + 'px; top:' + lblY + 'px;" onclick="window.mk_mod_api.selectPath(event, \'' + path.id + '\')"><span id="mk_mod_path_lbl_' + path.id + '">' + mk_mod_escapeHtml(path.name) + '</span></div>';
       });
     });
 
     if (mk_mod_state.linkNode.active) {
-       html += '<line x1="' + mk_mod_state.linkNode.startX + '" y1="' + mk_mod_state.linkNode.startY + '" x2="' + mk_mod_state.linkNode.currentX + '" y2="' + mk_mod_state.linkNode.currentY + '" stroke="#9ca3af" stroke-width="2" stroke-dasharray="6" marker-end="url(#mk_mod_arrow_default)" />';
+       html += '<line x1="' + mk_mod_state.linkNode.startX + '" y1="' + mk_mod_state.linkNode.startY + '" x2="' + mk_mod_state.linkNode.currentX + '" y2="' + mk_mod_state.linkNode.currentY + '" stroke="#9ca3af" stroke-width="3" stroke-dasharray="6" marker-end="url(#mk_mod_arrow_default)" />';
     }
 
     svg.innerHTML = html;
@@ -585,13 +252,8 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
       if (mk_mod_state.selectedKind === 'step') {
           var step = mk_mod_findStepById(mk_mod_state.selectedId); if(!step) return;
           if(title) title.innerHTML = '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_settings_20_regular icon-ic_fluent__size--20"></i> Właściwości Kroku';
-          
           html += '<div class="mk_mod_form_row"><label>Nazwa kroku</label><input type="text" class="mk_mod_input" id="mk_mod_live_name" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" value="' + mk_mod_escapeHtml(step.name) + '"></div>';
-          html += '<div class="mk_mod_form_row"><label>Opis działania (widoczny w edytorze)</label><textarea class="mk_mod_textarea" id="mk_mod_live_desc" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)">' + mk_mod_escapeHtml(step.stepDescription) + '</textarea></div>';
-          
-          if (mk_mod_state.model.steps.length > 1) {
-              html += '<div style="margin-top:24px;"><button type="button" class="mk_mod_btn mk_btn_border" style="width:100%; color: var(--mk_mod_accent);" onclick="window.mk_mod_api.deleteLive(this)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular icon-ic_fluent__size--20"></i> Usuń krok</button></div>';
-          }
+          html += '<div style="margin-top:24px;"><button type="button" class="mk_mod_btn mk_btn_border" style="width:100%; color: var(--mk_mod_accent);" onclick="window.mk_mod_api.deleteLive(this)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular icon-ic_fluent__size--20"></i> Usuń krok</button></div>';
       } 
       else if (mk_mod_state.selectedKind === 'path') {
           var pathData = mk_mod_findPathById(mk_mod_state.selectedId); if(!pathData) return;
@@ -601,10 +263,8 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
               return '<option value="' + c + '" ' + (pathData.path.color===c?'selected':'') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>';
           }).join('');
 
-          html += '<div class="mk_mod_form_row"><label>Nazwa ścieżki</label><input type="text" class="mk_mod_input" id="mk_mod_live_name" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" value="' + mk_mod_escapeHtml(pathData.path.name) + '"></div>';
-          html += '<div class="mk_mod_form_row"><label>Do kogo przypisać</label><input type="text" class="mk_mod_input" id="mk_mod_live_assignee" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" value="' + mk_mod_escapeHtml(pathData.path.assignee) + '"></div>';
-          html += '<div class="mk_mod_form_row"><label>Dodatkowe działanie</label><textarea class="mk_mod_textarea" id="mk_mod_live_action" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)">' + mk_mod_escapeHtml(pathData.path.action) + '</textarea></div>';
-          html += '<div class="mk_mod_form_row"><label>Kolor</label><select class="mk_mod_select" id="mk_mod_live_color" onchange="window.mk_mod_api.liveUpdate(this.id, this.value)">' + colorOptions + '</select></div>';
+          html += '<div class="mk_mod_form_row"><label>Etykieta ścieżki (warunek)</label><input type="text" class="mk_mod_input" id="mk_mod_live_name" oninput="window.mk_mod_api.liveUpdate(this.id, this.value)" value="' + mk_mod_escapeHtml(pathData.path.name) + '"></div>';
+          html += '<div class="mk_mod_form_row"><label>Kolor ścieżki</label><select class="mk_mod_select" id="mk_mod_live_color" onchange="window.mk_mod_api.liveUpdate(this.id, this.value)">' + colorOptions + '</select></div>';
           html += '<div style="margin-top:24px;"><button type="button" class="mk_mod_btn mk_btn_border" style="width:100%; color: var(--mk_mod_accent);" onclick="window.mk_mod_api.deleteLive(this)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular icon-ic_fluent__size--20"></i> Usuń połączenie</button></div>';
       }
       body.innerHTML = html;
@@ -616,11 +276,11 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
 
     var toolbarHtml = mk_mod_state.isLocked ? '' : ''
       + '<div class="mk_mod_flow_toolbar">'
-      +   '<button class="mk_mod_flow_toolbar_btn" title="Krok Startowy" onclick="window.mk_mod_api.addFlow(\'start\')" style="color: #d97706; background:#fef3c7;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_play_circle_20_regular icon-ic_fluent__size--20"></i></button>'
-      +   '<button class="mk_mod_flow_toolbar_btn" title="Krok Pośredni" onclick="window.mk_mod_api.addFlow(\'intermediate\')" style="color: #4b5563; background:#f3f4f6;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_document_20_regular icon-ic_fluent__size--20"></i></button>'
-      +   '<button class="mk_mod_flow_toolbar_btn" title="Bramka Decyzyjna" onclick="window.mk_mod_api.addFlow(\'gateway\')" style="color: #2563eb; background:#dbeafe;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_split_20_regular icon-ic_fluent__size--20"></i></button>'
-      +   '<button class="mk_mod_flow_toolbar_btn" title="Krok Zakończenia (Sukces)" onclick="window.mk_mod_api.addFlow(\'end_success\')" style="color: #059669; background:#d1fae5;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_checkmark_circle_20_regular icon-ic_fluent__size--20"></i></button>'
-      +   '<button class="mk_mod_flow_toolbar_btn" title="Krok Zakończenia (Błąd)" onclick="window.mk_mod_api.addFlow(\'end_negative\')" style="color: #dc2626; background:#fee2e2;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_dismiss_circle_20_regular icon-ic_fluent__size--20"></i></button>'
+      +   '<button class="mk_mod_flow_toolbar_btn" title="Krok Startowy" onclick="window.mk_mod_api.addFlow(\'start\')" style="color: #facc15;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_play_20_filled icon-ic_fluent__size--20"></i></button>'
+      +   '<button class="mk_mod_flow_toolbar_btn" title="Krok Pośredni" onclick="window.mk_mod_api.addFlow(\'intermediate\')" style="color: #94a3b8;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_more_horizontal_20_regular icon-ic_fluent__size--20"></i></button>'
+      +   '<button class="mk_mod_flow_toolbar_btn" title="Bramka Decyzyjna" onclick="window.mk_mod_api.addFlow(\'gateway\')" style="color: #94a3b8;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_diamond_20_regular icon-ic_fluent__size--20"></i></button>'
+      +   '<button class="mk_mod_flow_toolbar_btn" title="Zakończenie Sukces" onclick="window.mk_mod_api.addFlow(\'end_success\')" style="color: #22c55e;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_stop_20_filled icon-ic_fluent__size--20"></i></button>'
+      +   '<button class="mk_mod_flow_toolbar_btn" title="Zakończenie Błąd" onclick="window.mk_mod_api.addFlow(\'end_negative\')" style="color: #ef4444;"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_warning_20_regular icon-ic_fluent__size--20"></i></button>'
       + '</div>';
 
     var html = toolbarHtml + '<svg id="mk_mod_flow_svg" class="mk_mod_flow_svg"></svg><div id="mk_mod_flow_overlays" class="mk_mod_flow_svg"></div>';
@@ -629,17 +289,10 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
       var isSelected = mk_mod_state.selectedKind === "step" && mk_mod_state.selectedId === step.id ? " mk_mod_flow_node_selected" : "";
       var cssClass = "mk_mod_flow_node mk_mod_flow_node_" + mk_mod_escapeHtml(step.stepType) + isSelected;
       
-      var iconClass = "icon-ic_fluent_document_20_regular";
-      if(step.stepType === 'start') iconClass = "icon-ic_fluent_play_circle_20_regular";
-      if(step.stepType === 'gateway') iconClass = "icon-ic_fluent_arrow_split_20_regular";
-      if(step.stepType === 'end_success') iconClass = "icon-ic_fluent_checkmark_circle_20_regular";
-      if(step.stepType === 'end_negative') iconClass = "icon-ic_fluent_dismiss_circle_20_regular";
-
-      var typeLabel = "Krok pośredni";
-      if(step.stepType === 'start') typeLabel = "Start";
-      if(step.stepType === 'gateway') typeLabel = "Decyzja";
-      if(step.stepType === 'end_success') typeLabel = "Sukces";
-      if(step.stepType === 'end_negative') typeLabel = "Błąd";
+      var iconClass = "icon-ic_fluent_more_horizontal_20_regular";
+      if(step.stepType === 'start') iconClass = "icon-ic_fluent_play_20_filled";
+      if(step.stepType === 'end_success') iconClass = "icon-ic_fluent_stop_20_filled";
+      if(step.stepType === 'end_negative') iconClass = "icon-ic_fluent_warning_20_regular";
 
       var portHtml = mk_mod_state.isLocked ? '' : '<div class="mk_mod_flow_port" onmousedown="window.mk_mod_api.flowPortMouseDown(event, \'' + mk_mod_escapeHtml(step.id) + '\')" title="Pociągnij aby połączyć"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_routing_20_regular"></i></div>';
 
@@ -647,7 +300,6 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
             +   '<div class="mk_mod_flow_node_icon"><i class="webcon-ui icon-ic_fluent ' + iconClass + ' icon-ic_fluent__size--20"></i></div>'
             +   '<div class="mk_mod_flow_node_content">'
             +     '<div class="mk_mod_flow_node_title" id="mk_mod_node_lbl_' + step.id + '">' + mk_mod_escapeHtml(step.name) + '</div>'
-            +     '<div class="mk_mod_flow_node_type">' + typeLabel + '</div>'
             +   '</div>'
             +   portHtml
             + '</div>';
@@ -659,8 +311,107 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
   }
 
   // ==========================================
-  // 6. GŁÓWNA FUNKCJA RENDERUJĄCA
+  // RENDEROWANIE FORMULARZA I GŁÓWNA STRUKTURA
   // ==========================================
+  
+  function mk_mod_renderPalette() {
+    return mk_mod_palette.map(function (item) {
+      var extraClass = mk_mod_state.isLocked ? " mk_mod_disabled" : "";
+      return '<div class="mk_mod_palette_item' + extraClass + '" ' + (mk_mod_state.isLocked ? '' : 'draggable="true" ondragstart="window.mk_mod_api.dragStartPalette(event, \'' + item.type + '\')"') + '><div class="mk_mod_icon_label"><span class="mk_mod_icon">' + mk_mod_escapeHtml(item.icon) + '</span><span>' + mk_mod_escapeHtml(item.label) + '</span></div><small>' + mk_mod_escapeHtml(item.hint) + '</small></div>';
+    }).join("");
+  }
+
+  function mk_mod_renderLeftCellContent() {
+    var collapsedClass = mk_mod_state.isLeftPanelCollapsed ? ' mk_mod_left_col_hidden' : '';
+    var toggleIcon = mk_mod_state.isLeftPanelCollapsed ? '»' : '«';
+    var libraryHtml = mk_mod_state.isLocked ? '<div class="mk_mod_note">Biblioteka ukryta w trybie podglądu.</div>' : '<div class="mk_mod_palette_grid">' + mk_mod_renderPalette() + '</div>';
+    return '<div class="mk_mod_left_col_shell' + collapsedClass + '"><button type="button" class="mk_mod_left_col_toggle" onclick="window.mk_mod_api.toggleLeftPanel()">' + toggleIcon + '</button><div class="mk_mod_left_col_inner">' + libraryHtml + '</div><div class="mk_mod_collapsed_stub"><div class="mk_mod_collapsed_stub_text">Narzędzia</div></div></div>';
+  }
+
+  function mk_mod_renderFieldPreview(item, parentGroupId) {
+    // POPRAWKA: Jeśli `item.label` jest puste (""), wyświetl elegancki szary napis [Brak nazwy] aby podgląd nie zniknął.
+    var labelHtml = item.label ? mk_mod_escapeHtml(item.label) : '<span style="color:#9ca3af; font-style:italic;">[Brak nazwy]</span>';
+    var value = item.sampleValue || "";
+    var placeholder = item.placeholder || "";
+    var requiredMark = item.required ? ' <span style="color:#991829">*</span>' : '';
+    var hiddenBadge = !item.isVisible ? '<span class="mk_mod_badge_hidden" title="Pole ukryte"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_eye_off_20_regular"></i> Ukryte</span>' : '';
+    var readonlyBadge = (!item.isEditable && item.isVisible) ? '<span class="mk_mod_badge_readonly" title="Tylko do odczytu"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_lock_20_regular"></i> Tylko odczyt</span>' : '';
+
+    var extractBtn = (parentGroupId && !mk_mod_state.isLocked) ? '<button type="button" class="mk_mod_icon_btn" onclick="window.mk_mod_api.extractItem(event, \'' + item.id + '\')"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_up_left_20_regular"></i></button>' : '';
+    var removeBtn = mk_mod_state.isLocked ? '' : '<button type="button" class="mk_mod_icon_btn" onclick="window.mk_mod_api.removeItem(event, \'' + item.id + '\')"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular"></i></button>';
+    var actionsHtml = '<div class="mk_mod_field_actions">' + extractBtn + removeBtn + '</div>';
+
+    var fullLabel = labelHtml + requiredMark + hiddenBadge + readonlyBadge;
+
+    if (item.type === "textarea") return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><textarea class="mk_mod_preview_textarea" placeholder="' + mk_mod_escapeHtml(placeholder) + '" readonly>' + mk_mod_escapeHtml(value) + '</textarea>' + actionsHtml + '</div>';
+    if (item.type === "number") return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><input class="mk_mod_preview_input" type="number" value="' + mk_mod_escapeHtml(value) + '" placeholder="' + mk_mod_escapeHtml(placeholder) + '" readonly />' + actionsHtml + '</div>';
+    if (item.type === "date") return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><input class="mk_mod_preview_input" type="date" value="' + mk_mod_escapeHtml(value) + '" readonly />' + actionsHtml + '</div>';
+    if (item.type === "select") {
+      var options = (item.options && item.options.length ? item.options : ["Opcja 1"]).map(function (opt) { return '<option>' + mk_mod_escapeHtml(opt) + '</option>'; }).join("");
+      return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><select class="mk_mod_preview_select" disabled>' + options + '</select>' + actionsHtml + '</div>';
+    }
+    if (item.type === "checkbox") return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><label class="mk_mod_preview_checkbox"><input type="checkbox" disabled /></label>' + actionsHtml + '</div>';
+    return '<div class="mk_mod_field_line"><div class="mk_mod_field_label">' + fullLabel + '</div><input class="mk_mod_preview_input" type="text" value="' + mk_mod_escapeHtml(value) + '" placeholder="' + mk_mod_escapeHtml(placeholder) + '" readonly />' + actionsHtml + '</div>';
+  }
+
+  function mk_mod_renderItem(item, parentGroupId) {
+    var isSelected = (mk_mod_state.selectedKind === "item" && mk_mod_state.selectedId === item.id);
+    var isLocked = mk_mod_state.isLocked;
+    
+    var dragAttr = (isLocked || isSelected) ? "" : ' draggable="true" ondragstart="window.mk_mod_api.dragStartMove(event, \'' + item.id + '\')"';
+    var clickAttr = ' onclick="window.mk_mod_api.selectItem(event, \'' + item.id + '\')"';
+    
+    var inlineEditorHtml = "";
+    if (isSelected && !isLocked) {
+        if (item.kind === "group") {
+            inlineEditorHtml = '<div class="mk_mod_inline_editor mk_mod_inline_editor_group" onclick="event.stopPropagation()">' +
+                '<div class="mk_mod_form_row"><label>Nazwa grupy</label><input class="mk_mod_input" id="mk_mod_prop_group_title" placeholder="Wpisz nazwę grupy..." value="' + mk_mod_escapeHtml(item.title || "") + '" /></div>' +
+                '<div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" onclick="window.mk_mod_api.saveProps(event)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_save_20_regular icon-ic_fluent__size--20"></i> Zapisz</button><button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.deselectItem(event)">Zamknij</button></div>' +
+                '</div>';
+        } else {
+            inlineEditorHtml = '<div class="mk_mod_inline_editor" onclick="event.stopPropagation()">' +
+                '<div class="mk_mod_form_row"><label>Nazwa atrybutu</label><input class="mk_mod_input" id="mk_mod_prop_field_label" placeholder="Wpisz nazwę..." value="' + mk_mod_escapeHtml(item.label || "") + '" /></div>' +
+                '<div class="mk_mod_form_row"><label>Opis działania (placeholder)</label><textarea class="mk_mod_textarea" id="mk_mod_prop_field_description" placeholder="Opcjonalny tekst pomocniczy..." style="min-height:50px;">' + mk_mod_escapeHtml(item.placeholder || "") + '</textarea></div>' +
+                '<div class="mk_mod_inline_checkbox_group">' +
+                    '<label><input type="checkbox" id="mk_mod_prop_field_required" ' + (item.required ? "checked" : "") + ' /> Pole wymagane</label>' +
+                    '<label><input type="checkbox" id="mk_mod_prop_field_visible" ' + (item.isVisible ? "checked" : "") + ' /> Widoczne na kroku</label>' +
+                    '<label><input type="checkbox" id="mk_mod_prop_field_editable" ' + (item.isEditable ? "checked" : "") + ' /> Edytowalne</label>' +
+                '</div>' +
+                '<div style="display:flex; gap:8px; margin-top:12px;"><button type="button" class="mk_mod_btn mk_mod_btn_primary mk_btn_border" onclick="window.mk_mod_api.saveProps(event)"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_save_20_regular icon-ic_fluent__size--20"></i> Zapisz</button><button type="button" class="mk_mod_btn mk_btn_border" onclick="window.mk_mod_api.deselectItem(event)">Zamknij</button></div>' +
+                '</div>';
+        }
+    }
+    
+    if (item.kind === "group") {
+      var parentInfo = mk_mod_findAnyItem(item.id);
+      var currentStepId = parentInfo ? parentInfo.stepId : "";
+      var innerHtml = "";
+
+      if (!item.items.length) {
+        innerHtml = (!isLocked ? '<div class="mk_mod_dropzone" ondragover="window.mk_mod_api.dragOver(event)" ondragleave="window.mk_mod_api.dragLeave(event)" ondrop="window.mk_mod_api.drop(event, \'' + currentStepId + '\', \'' + item.id + '\', 0)"></div>' : '')
+          + '<div class="mk_mod_step_empty">Upuść tutaj pole (nie grupę).</div>';
+      } else {
+        innerHtml = item.items.map(function (child, idx) {
+          return (!isLocked ? '<div class="mk_mod_dropzone" ondragover="window.mk_mod_api.dragOver(event)" ondragleave="window.mk_mod_api.dragLeave(event)" ondrop="window.mk_mod_api.drop(event, \'' + currentStepId + '\', \'' + item.id + '\', ' + idx + ')"></div>' : '')
+            + mk_mod_renderItem(child, item.id);
+        }).join("");
+        if (!isLocked) {
+          innerHtml += '<div class="mk_mod_dropzone" ondragover="window.mk_mod_api.dragOver(event)" ondragleave="window.mk_mod_api.dragLeave(event)" ondrop="window.mk_mod_api.drop(event, \'' + currentStepId + '\', \'' + item.id + '\', ' + item.items.length + ')"></div>';
+        }
+      }
+
+      var extractGroupBtn = (parentGroupId && !isLocked) ? '<button type="button" class="mk_mod_icon_btn" title="Wyciągnij Grupę" onclick="window.mk_mod_api.extractItem(event, \'' + item.id + '\')"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_up_left_20_regular"></i></button>' : '';
+      var removeGroupBtn = isLocked ? '' : '<button type="button" class="mk_mod_icon_btn" title="Usuń kontener" onclick="window.mk_mod_api.removeItem(event, \'' + item.id + '\')"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular"></i></button>';
+
+      return '<div class="mk_mod_group_box' + (isSelected ? ' mk_mod_selected' : '') + '"' + dragAttr + clickAttr + '><div class="mk_mod_group_title"><span>' + mk_mod_escapeHtml(item.title || "Nowa grupa") + '</span><div style="display: flex; gap: 4px;">' + extractGroupBtn + removeGroupBtn + '</div></div>' + inlineEditorHtml + '<div class="mk_mod_group_inner">' + innerHtml + '</div></div>';
+    }
+
+    var hiddenClass = !item.isVisible ? " mk_mod_field_hidden" : "";
+    var readonlyClass = !item.isEditable ? " mk_mod_field_readonly" : "";
+
+    return '<div class="mk_mod_field_box' + (isSelected ? ' mk_mod_selected' : '') + hiddenClass + readonlyClass + '"' + dragAttr + clickAttr + '>' + mk_mod_renderFieldPreview(item, parentGroupId) + inlineEditorHtml + '</div>';
+  }
+
   function mk_mod_render() {
     var mk_mod_root = document.getElementById("mk_mod_app");
     if (!mk_mod_root) return;
@@ -731,16 +482,16 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
       +         '</div>'
       +       '</div>'
 
-      +       '<div id="mk_mod_flow_view" class="' + (mk_mod_state.viewMode === "flow" ? "" : "mk_mod_view_hidden") + '">'
+      +       '<div id="mk_mod_flow_view" class="' + (mk_mod_state.viewMode === "flow" ? "" : "mk_mod_view_hidden") + '" style="position: relative; overflow: hidden; width: 100%;">'
       +         '<div class="mk_mod_flow_workspace" id="mk_mod_flow_workspace_wrap" onmousemove="window.mk_mod_api.flowMouseMove(event)" onmouseup="window.mk_mod_api.flowMouseUp(event)" onmouseleave="window.mk_mod_api.flowMouseUp(event)">'
       +            '<div id="mk_mod_flow_workspace_inner" style="width:100%; height:100%;"></div>'
-      +            '<div id="mk_mod_flow_properties_container" class="mk_mod_flow_panel">'
-      +               '<div class="mk_mod_flow_panel_head">'
-      +                   '<h3 id="mk_mod_flow_panel_title">Właściwości</h3>'
-      +                   '<button class="mk_mod_icon_btn" onclick="window.mk_mod_api.closeProps()" style="color:var(--mk_mod_text);"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_dismiss_20_regular icon-ic_fluent__size--20"></i></button>'
-      +               '</div>'
-      +               '<div id="mk_mod_flow_panel_body" class="mk_mod_flow_panel_body"></div>'
+      +         '</div>'
+      +         '<div id="mk_mod_flow_properties_container" class="mk_mod_flow_panel">'
+      +            '<div class="mk_mod_flow_panel_head">'
+      +                '<h3 id="mk_mod_flow_panel_title">Właściwości</h3>'
+      +                '<button class="mk_mod_icon_btn" onclick="window.mk_mod_api.closeProps()" style="color:var(--mk_mod_text);"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_dismiss_20_regular icon-ic_fluent__size--20"></i></button>'
       +            '</div>'
+      +            '<div id="mk_mod_flow_panel_body" class="mk_mod_flow_panel_body"></div>'
       +         '</div>'
       +       '</div>'
 
@@ -793,7 +544,8 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
           mk_mod_state.selectedId = id;
           mk_mod_render();
       },
-      deselectItem: function() {
+      deselectItem: function(e) {
+          if (e) e.stopPropagation(); 
           mk_mod_state.selectedKind = null;
           mk_mod_state.selectedId = null;
           mk_mod_render();
@@ -819,26 +571,22 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
           mk_mod_state.selectedKind = "item";
           mk_mod_render();
       },
-      saveProps: function() {
+      saveProps: function(e) {
+          if (e) e.stopPropagation(); 
           if (mk_mod_state.selectedKind === "item") {
               var found = mk_mod_findAnyItem(mk_mod_state.selectedId);
               if (found) {
                   if (found.item.kind === "group") {
-                      var groupTitle = document.getElementById("mk_mod_prop_group_title");
-                      found.item.title = groupTitle ? groupTitle.value.trim() : found.item.title;
+                      found.item.title = document.getElementById("mk_mod_prop_group_title").value.trim();
                   } else {
-                      var labelEl = document.getElementById("mk_mod_prop_field_label");
-                      var descriptionEl = document.getElementById("mk_mod_prop_field_description");
-                      var requiredEl = document.getElementById("mk_mod_prop_field_required");
-                      var visibleEl = document.getElementById("mk_mod_prop_field_visible");
-                      var editableEl = document.getElementById("mk_mod_prop_field_editable");
-                      
-                      found.item.label = labelEl ? labelEl.value.trim() : found.item.label;
-                      found.item.required = !!(requiredEl && requiredEl.checked);
-                      found.item.isVisible = visibleEl ? visibleEl.checked : true;
-                      found.item.isEditable = editableEl ? editableEl.checked : true;
-                      if (descriptionEl) found.item.placeholder = descriptionEl.value.trim();
+                      found.item.label = document.getElementById("mk_mod_prop_field_label").value.trim();
+                      found.item.required = document.getElementById("mk_mod_prop_field_required").checked;
+                      found.item.isVisible = document.getElementById("mk_mod_prop_field_visible").checked;
+                      found.item.isEditable = document.getElementById("mk_mod_prop_field_editable").checked;
+                      found.item.placeholder = document.getElementById("mk_mod_prop_field_description").value.trim();
                   }
+                  mk_mod_state.selectedKind = null;
+                  mk_mod_state.selectedId = null;
                   mk_mod_render();
               }
           }
@@ -970,10 +718,9 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
           }
           mk_mod_syncJson();
       },
-      // Nowe funkcje dla Flow Drag&Drop
       flowNodeMouseDown: function(e, stepId) {
           if (mk_mod_state.isLocked || mk_mod_state.viewMode !== 'flow') return;
-          if (e.button !== 0) return; // Tylko lewy przycisk myszy
+          if (e.button !== 0) return; 
           e.stopPropagation();
 
           mk_mod_state.selectedKind = 'step';
@@ -1054,7 +801,8 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
                       if (sourceStep) {
                           var newPathId = mk_mod_uid("path");
                           sourceStep.paths.push({ id: newPathId, name: "Nowa ścieżka", assignee: "", action: "", targetStepId: targetId, color: "default" });
-                          mk_mod_state.selectedKind = 'path'; mk_mod_state.selectedId = newPathId;
+                          mk_mod_state.selectedKind = 'path';
+                          mk_mod_state.selectedId = newPathId;
                           mk_mod_syncJson();
                           mk_mod_renderFlow(); 
                       }
@@ -1067,34 +815,25 @@ ponizsze elementy powinny miec dodane </br> na koncu bo wyswietlaja sie w jednej
   };
 
   // ==========================================
-  // 9. Funkcja synchronizująca lock formularza wizualnego z formularzem (czy jest w trybie edycji czy nie)
+  // 9. Funkcja synchronizująca lock formularza wizualnego z formularzem
   // ==========================================
+  window.mk_mod_isFormEditable = function () {
+      if (!window.WEBCON || !WEBCON.Forms || !WEBCON.Forms.FormState) {
+          console.log("WEBCON.Forms.FormState niedostępny");
+          return false;
+      }
+      if (WEBCON.Forms.FormState.IsEditMode === true) {
+          return true;
+      } else {
+          return false;
+      }
+  };
 
-window.mk_mod_isFormEditable = function () {
-
-    if (!window.WEBCON || !WEBCON.Forms || !WEBCON.Forms.FormState) {
-        console.log("WEBCON.Forms.FormState niedostępny");
-        return false;
-    }
-
-    console.log(
-        "WEBCON.Forms.FormState.IsEditMode =",
-        WEBCON.Forms.FormState.IsEditMode
-    );
-
-    if (WEBCON.Forms.FormState.IsEditMode === true) {
-        console.log("Formularz WEBCON w TRYBIE EDYCJI");
-        return true;
-    } else {
-        console.log("Formularz WEBCON w TRYBIE PODGLĄDU (read-only)");
-        return false;
-    }
-};
   // ==========================================
   // 8. INICJALIZACJA APLIKACJI
   // ==========================================
   mk_mod_loadModelFromWebcon();
+  mk_mod_state.isLocked = !window.mk_mod_isFormEditable();
   mk_mod_render();
-  mk_mod_isFormEditable();
 })();
 </script>
