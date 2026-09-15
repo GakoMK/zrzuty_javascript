@@ -1,54 +1,107 @@
-console.log("Załadowano bezpieczną zmianę waluty JS+CSS");
+console.log("Załadowano JS_Akcje_Po_Zaladowaniu_DOM_OPTI (Wersja Dynamiczna)");
 
-function podmienWalutePrzezCSS() {
-    // Pobranie wartości waluty z Twojego pola
-    let domyslnaWaluta = GetValue('#{FLD:2401}#') || ""; 
-    if (!domyslnaWaluta) return;
+// 1. Bezpieczna funkcja podmieniająca węzły tekstowe
+function bezpiecznaPodmianaWaluty() {
+    let domyslnaWaluta = GetValue('#{FLD:2401}#') || "";
+    if (!domyslnaWaluta) return; // Zabezpieczenie, jeśli pole waluty jest jeszcze puste
 
-    // Pobiera wszystkie etykiety, labele, nagłówki tabel (standardowe klasy Webcon)
-    let labels = document.querySelectorAll('label, .form-label, .ms-Label, th span');
-
-    labels.forEach(label => {
-        // Zapisujemy oryginalny tekst do naszego własnego atrybutu "data-oryginalny-tekst"
-        let originalText = label.getAttribute('data-oryginalny-tekst');
-        
-        // Jeśli robimy to pierwszy raz dla danego elementu:
-        if (!originalText) {
-            originalText = label.innerText;
-            // Interesują nas tylko te etykiety, które zawierają nasz znacznik
-            if (originalText.includes('[_waluta_]')) {
-                label.setAttribute('data-oryginalny-tekst', originalText);
+    let treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode: function(node) {
+            // Pomijamy węzły wewnątrz skryptów i stylów
+            if (node.parentNode && (node.parentNode.nodeName === 'SCRIPT' || node.parentNode.nodeName === 'STYLE')) {
+                return NodeFilter.FILTER_REJECT;
             }
+            // Szukamy tylko węzłów z naszym placeholderem
+            if (node.nodeValue.includes('[_waluta_]')) {
+                return NodeFilter.FILTER_ACCEPT;
+            }
+            return NodeFilter.FILTER_SKIP;
         }
+    }, false);
 
-        // Jeśli etykieta zawiera nasz znacznik, wykonujemy podmianę
-        if (originalText && originalText.includes('[_waluta_]')) {
-            let nowyTekst = originalText.replace('[_waluta_]', domyslnaWaluta);
+    let nodesToReplace = [];
+    let currentNode;
+    while (currentNode = treeWalker.nextNode()) {
+        nodesToReplace.push(currentNode);
+    }
+
+    nodesToReplace.forEach(textNode => {
+        if (textNode.parentNode) {
+            let newText = textNode.nodeValue.replace(/\[_waluta_\]/g, domyslnaWaluta);
             
-            // Wpisujemy podmieniony tekst do ukrytego atrybutu (bez dotykania DOM i Reacta!)
-            label.setAttribute('data-zastapiony-tekst', nowyTekst);
-            // Dodajemy klasę, którą obsłużymy w CSS
-            label.classList.add('waluta-podmieniona');
+            // ROZWIĄZANIE BŁĘDU WEBCON:
+            // Zamiast textNode.data = newText, tworzymy i podmieniamy cały węzeł
+            let newTextNode = document.createTextNode(newText);
+            textNode.parentNode.replaceChild(newTextNode, textNode);
         }
     });
 }
 
-// Ochrona wydajności: Debounce dla MutationObservera
-let timeoutId = null;
-const observer = new MutationObserver(() => {
-    if (timeoutId) {
-        clearTimeout(timeoutId);
+// 2. Inicjalizacja nasłuchiwania na dynamiczne zmiany formularza
+function inicjalizujDynamicznaPodmiane() {
+    // Odpalamy pierwszy raz dla elementów, które już są na stronie
+    bezpiecznaPodmianaWaluty();
+
+    // Tworzymy obserwatora na wypadek, gdyby formularz doładował nowe pola
+    const observer = new MutationObserver((mutations) => {
+        let shouldUpdate = false;
+        
+        for (let mutation of mutations) {
+            // Reagujemy tylko na dodawanie nowych węzłów do DOM
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                shouldUpdate = true;
+                break;
+            }
+        }
+
+        if (shouldUpdate) {
+            // ZATRZYMUJEMY obserwator na czas naszej własnej modyfikacji,
+            // aby nie wpaść w nieskończoną pętlę (nasze replaceChild też wyzwala childList)
+            observer.disconnect();
+            
+            bezpiecznaPodmianaWaluty();
+            
+            // WZNAWIAMY nasłuchiwanie
+            startObserving();
+        }
+    });
+
+    function startObserving() {
+        // Nasłuchujemy zmian na całym ciele dokumentu
+        observer.observe(document.body, { childList: true, subtree: true });
     }
-    // Czekamy 50ms na zakończenie renderowania przez Webcona i odpalamy podmianę
-    timeoutId = setTimeout(() => {
-        podmienWalutePrzezCSS();
-    }, 50); 
+
+    startObserving();
+}
+
+// 3. Bonus: Ulepszona funkcja czyBilety (Event Delegation)
+// Stara wersja przestałaby działać, jeśli pole checkbox pojawiłoby się dynamicznie
+function czyBiletyDynamiczne() {
+    document.body.addEventListener('click', function(e) {
+        // Sprawdzamy czy to, w co kliknął użytkownik jest naszym checkboxem
+        let target = e.target.closest("#AttBool2 .check-box__styled-input");
+        if (target) {
+            console.log('Kliknięto dynamiczny element biletu.');
+            var biletySection = document.querySelector("#biletySection");
+            if (biletySection) {
+                biletySection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    });
+}
+
+
+// ----------------------------- TECHNICZNE
+const isElementLoaded = async selector => {
+    while (document.querySelector(selector) === null) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+    return document.querySelector(selector);
+};
+
+// Start całego skryptu
+isElementLoaded('#BottomPanel').then(() => {
+    console.log("Element załadowany – uruchamiam funkcje modyfikujące UI");
+    inicjalizujDynamicznaPodmiane();
+    czyBiletyDynamiczne();
 });
-
-// Uruchamiamy obserwatora na całym ciele dokumentu
-observer.observe(document.body, { childList: true, subtree: true });
-
-// Ręczne uruchomienie dla elementów widocznych od razu po załadowaniu
-setTimeout(() => {
-    podmienWalutePrzezCSS();
-}, 200); // Małe opóźnienie, by mieć pewność, że zmienna z walutą jest już zaczytana
