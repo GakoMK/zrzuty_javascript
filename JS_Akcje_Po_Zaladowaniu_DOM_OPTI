@@ -1,0 +1,176 @@
+// Generuje problem Uncaught TypeError: _0x37523f.target[_0x3cf1(...)] is not a function at MutationObserver
+
+
+console.log("Załadowano JS_Akcje_Po_Zaladowaniu_DOM_OPTI");
+
+// Ustawia domyslna walute
+function walkText(node) {
+    let domyslnaWaluta = GetValue('#{FLD:2401}#');
+    let treeWalker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
+    let currentNode;
+    while (currentNode = treeWalker.nextNode()) {
+        currentNode.data = currentNode.data.replace("[_waluta_]", domyslnaWaluta);
+    }
+}
+
+// sprawdza czy kliknieto bilet i robi scroll to div
+function czyBilety() {
+    var spanElement = document.querySelector("#AttBool2 > div > div > div.col-sm-7.col-xs-12.ms-formbody.wfBesideRight.col-xs-height.full-height.th-frm-bg1.form-field-control.beside-panel__value > div > div.checkbox__wrapper > div > div > label > span.check-box__styled-input");
+    if (spanElement) {
+        console.log('Element został znaleziony.');
+        spanElement.addEventListener('click', function() {
+            var biletySection = document.querySelector("#biletySection");
+            if (biletySection) {
+                biletySection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    } else {
+        console.log('Element nie został znaleziony: sprawdza czy kliknieto bilet i robi scroll to div');
+    }
+}
+
+
+function replaceTextTOico() {
+    console.log("🔁 Uruchomiono replaceTextTOico()");
+    const spans = document.querySelectorAll("span.webcon-ui.text.text__subtitle-2-strong.text__base");
+
+    const str = {
+        1: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_person_20_regular"></i> Pracownik</span>',
+        2: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_briefcase_20_regular"></i> Delegacja</span>',
+        3: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_food_apple_20_regular"></i> Dieta</span>',
+        4: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_image_20_regular"></i> Zakup biletów</span>',
+        5: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_airplane_20_regular"></i> Transport</span>',
+        6: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_vehicle_bus_20_regular"></i> Środki komunikacji miejskiej</span>',
+        7: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_bed_20_regular"></i> Nocleg</span>',
+        8: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_tag_20_regular"></i> Inne wydatki udokumentowane</span>',
+        9: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_list_20_regular"></i> Podsumowanie</span>',
+        10: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_checkmark_circle_20_regular"></i> Akceptacje</span>',
+        11: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_money_20_regular"></i> Suma walut pozycji z list</span>',
+        12: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_money_20_regular"></i> Suma walut diet i ryczałtów</span>',
+        13: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_folder_open_20_regular"></i> Dostarczenie dokumentów</span>',
+        14: '<span class="mk-header"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_phone_20_regular"></i> Pakiety Roamingowe</span>'
+    };
+
+    const txt = Object.values({
+        1: '@Pracownik',
+        2: '@Delegacja',
+        3: '@Dieta',
+        4: '@Zakup biletów',
+        5: '@Transport',
+        6: '@Srodki komunikacji miejskiej',
+        7: '@Nocleg',
+        8: '@Inne wydatki udokumentowane',
+        9: '@Podsumowanie',
+        10: '@Akceptacje',
+        11: '@Suma walut pozycji z list',
+        12: '@Suma walut diet i ryczałtów',
+        13: '@Dostarczenie dokumentów',
+        14: '@Pakiety Roamingowe'
+    });
+
+    spans.forEach(span => {
+        const content = span.textContent.trim();
+        Object.entries(str).forEach(([key, html]) => {
+            if (content === txt[key - 1]) {
+                span.innerHTML = html;
+            }
+        });
+    });
+}
+
+
+
+// zamieniam przyciski
+function replaceButtonTOico() {
+    const container = document.querySelector('.wfBottomSide');
+    if (!container) return;
+
+    console.log("Element o klasie 'wfBottomSide' istnieje.");
+
+    const buttons = container.querySelectorAll('.webcon-ui');
+    if (!buttons.length) return;
+
+    const str = {
+        1: '<span class="mk-button-span">Prześlij do akceptacji <i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_right_20_regular mk_white"></i></span>',
+        2: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_left_20_regular mk_yellow"></i> Cofnij do poprawy</span>',
+        3: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_dismiss_20_regular mk_red"></i> Odrzuć</span>',
+        4: '<span class="mk-button-span">Akceptuje <i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_right_20_regular mk_white"></i></span>',
+        5: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_dismiss_20_regular mk_red"></i> Anuluj delegacje</span>',
+        6: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_edit_20_regular"></i> Edycja polecenia wyjazdu</span>',
+        7: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_delete_20_regular"></i> Usuń ubezpieczenie</span>',
+        8: '<span class="mk-button-span">Wniosek o zakup biletów <i class="webcon-ui icon-ic_fluent icon-ic_fluent_cart_20_regular"></i></span>',
+        9: '<span class="mk-button-span">Przekaż do weryfikacji <i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_right_20_regular mk_white"></i></span>',
+        10: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_left_20_regular mk_yellow"></i> Cofnij do uzupełnienia</span>',
+        11: '<span class="mk-button-span">Przekaż do Weryfikacji Walut <i class="webcon-ui icon-ic_fluent icon-ic_fluent_person_20_regular"></i></span>',
+        12: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_left_20_regular mk_yellow"></i> Cofnij do rozliczenia</span>',
+        13: '<span class="mk-button-span">Przekaż do Akceptacji <i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_right_20_regular mk_white"></i></span>',
+        14: '<span class="mk-button-span">Wysłano / dostarczono <i class="webcon-ui icon-ic_fluent icon-ic_fluent_checkmark_20_regular mk_white"></i></span>',
+        15: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_left_20_regular mk_yellow"></i> Cofnij - brak dokumentów</span>',
+        16: '<span class="mk-button-span">Potwierdzam odbiór dokumentów <i class="webcon-ui icon-ic_fluent icon-ic_fluent_checkmark_20_regular mk_white"></i></span>',
+        17: '<span class="mk-button-span">Rozlicz delegacje <i class="webcon-ui icon-ic_fluent icon-ic_fluent_inbox_20_regular mk_white"></i></span>',
+        18: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_left_20_regular mk_yellow"></i> Przywróć do księgowości</span>',
+        19: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_left_20_regular mk_yellow"></i> Przywróć do rejestracji</span>',
+        20: '<span class="mk-button-span"><i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_left_20_regular mk_yellow"></i> Przywróć</span>',
+        21: '<span class="mk-button-span">Akceptuję wstępne rozliczenie <i class="webcon-ui icon-ic_fluent icon-ic_fluent_arrow_right_20_regular mk_white"></i></span>'
+    };
+
+    const txt = {
+        1: 'Prześlij do akceptacji',
+        2: 'Cofnij do poprawy',
+        3: 'Odrzuć',
+        4: 'Akceptuje',
+        5: 'Anuluj delegacje',
+        6: 'Edycja polecenia wyjazdu',
+        7: 'Usuń ubezpieczenie',
+        8: 'Wniosek o zakup biletów',
+        9: 'Przekaż do weryfikacji',
+        10: 'Cofnij do uzupełnienia',
+        11: 'Przekaż do Weryfikacji Walut',
+        12: 'Cofnij do rozliczenia',
+        13: 'Przekaż do Akceptacji',
+        14: 'Wysłano / dostarczono',
+        15: 'Cofnij - brak dokumentów',
+        16: 'Potwierdzam odbiór dokumentów',
+        17: 'Rozlicz delegacje',
+        18: 'Przywróć do księgowości',
+        19: 'Przywróć do rejestracji',
+        20: 'Przywróć',
+        21: 'Akceptuję wstępne rozliczenie'
+    };
+
+    buttons.forEach(button => {
+        const content = button.textContent.trim();
+        Object.keys(txt).forEach(key => {
+            if (content === txt[key]) {
+                console.log(`🔁 Zamieniono przycisk: "${content}"`);
+                button.innerHTML = str[key];
+            }
+        });
+    });
+}
+
+
+function stylujePanele() {
+    var allDivElements = document.querySelectorAll("div[id*='Group_']:not([id*='children'])");
+    allDivElements.forEach(div => {
+        div.classList.add("mk-panel");
+    });
+}
+
+// ----------------------------- TECHNICZNE
+const isElementLoaded = async selector => {
+    while (document.querySelector(selector) === null) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+    return document.querySelector(selector);
+};
+
+// Nowy selektor, który pojawia się w nagłówkach paneli
+isElementLoaded('#BottomPanel').then(() => {
+    console.log("Element załadowany – uruchamiam funkcje modyfikujące UI");
+    walkText(document.body);
+    // stylujePanele();
+    // replaceTextTOico()
+    replaceButtonTOico();
+    czyBilety();
+});
