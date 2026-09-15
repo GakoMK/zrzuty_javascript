@@ -5,7 +5,7 @@
   // ==========================================
   // 1. ZMIENNE I STAN APLIKACJI
   // ==========================================
-  var mk_mod_webconField = '#{FLD:1243}#';
+  var mk_mod_webconField = '#{FLD:5619}#';
 
   var mk_mod_path_colors = { 
       'default': '#9ca3af', 'green': '#84cc16', 'blue': '#0ea5e9', 'red': '#ef4444' 
@@ -543,11 +543,78 @@
           mk_mod_render();
       },
       toggleFullscreen: function() {
-          var appNode = document.getElementById("mk_mod_app");
-          if (!appNode) return;
-          if (!document.fullscreenElement) { if (appNode.requestFullscreen) appNode.requestFullscreen(); } 
-          else { if (document.exitFullscreen) document.exitFullscreen(); }
-      },
+    var appNode = document.getElementById("mk_mod_app");
+    if (!appNode) return;
+
+    function mk_mod_setFullscreenHeight(isFullscreen) {
+        var workspace = document.getElementById("mk_mod_flow_workspace_wrap");
+
+        if (!workspace) return;
+
+        if (isFullscreen) {
+            var workspaceRect = workspace.getBoundingClientRect();
+            var availableHeight = window.innerHeight - workspaceRect.top - 30;
+
+            workspace.style.setProperty(
+                "height",
+                Math.max(availableHeight, 300) + "px",
+                "important"
+            );
+        } else {
+            workspace.style.removeProperty("height");
+        }
+    }
+
+    function mk_mod_onFullscreenChange() {
+        var isFullscreen =
+            document.fullscreenElement === appNode ||
+            document.webkitFullscreenElement === appNode;
+
+        requestAnimationFrame(function() {
+            mk_mod_setFullscreenHeight(isFullscreen);
+
+            requestAnimationFrame(function() {
+                mk_mod_setFullscreenHeight(isFullscreen);
+            });
+        });
+
+        if (!isFullscreen) {
+            document.removeEventListener(
+                "fullscreenchange",
+                mk_mod_onFullscreenChange
+            );
+
+            document.removeEventListener(
+                "webkitfullscreenchange",
+                mk_mod_onFullscreenChange
+            );
+        }
+    }
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        document.addEventListener(
+            "fullscreenchange",
+            mk_mod_onFullscreenChange
+        );
+
+        document.addEventListener(
+            "webkitfullscreenchange",
+            mk_mod_onFullscreenChange
+        );
+
+        if (appNode.requestFullscreen) {
+            appNode.requestFullscreen();
+        } else if (appNode.webkitRequestFullscreen) {
+            appNode.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+},
       clearEditor: function() {
           if (confirm("UWAGA: Usuniesz wszystkie dane i rozpoczniesz z czystą kartą. Czy na pewno?")) {
               mk_mod_state.model.steps = [{ id: mk_mod_uid("step"), name: "Krok Startowy", stepDescription: "", ui_x: 250, ui_y: 100, stepType: "start", items: [], paths: [] }];
