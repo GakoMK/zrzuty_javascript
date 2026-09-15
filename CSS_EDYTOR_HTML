@@ -38,6 +38,7 @@
       background-size: 20px 20px;
   }
 
+
   .mk_mod_app { width: 100%; color: var(--mk_mod_text); background: var(--mk_mod_bg); border-radius: 10px; position: relative; overflow: hidden; }
 
   .mk_mod_header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
@@ -137,7 +138,11 @@
 
   /* --- WIDOK PRZEPŁYWU (FLOW) & ZOOM --- */
   .mk_mod_flow_workspace { position: relative; width: 100%; height: 650px; background: #fbfbfb; overflow: auto; }
-  
+.mk_mod_app:fullscreen .mk_mod_flow_workspace,
+.mk_mod_app:-webkit-full-screen .mk_mod_flow_workspace {
+    height: calc(100vh - 60px);
+}  
+
   .mk_mod_flow_canvas {
       position: relative;
       min-width: 2000px;
