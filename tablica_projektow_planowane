@@ -1,0 +1,128 @@
+SELECT
+    CONCAT(
+        '<div class="mk_knb_card mk_knb_planing">', 
+            
+            '<div class="mk_knb_card-header">',
+	'<i class="webcon-ui icon-ic_fluent icon-ic_fluent_link_20_regular"></i> ', 
+                '<a class="mk_knb_card-sig" href="/db/1/app/{AP:51}/element/', 
+                    CAST(wfee.WFD_ID AS VARCHAR), 
+                '" target="_blank">', 
+                    wfee.WFD_Signature, 
+                '</a>',
+                '<span class="mk_badge mk_badge-', 				
+                    {WFCONCOL_ID:5634}, 
+                '">', 
+	'<i class="webcon-ui icon-ic_fluent icon-ic_fluent_alert_20_regular"></i> ', 
+                    {WFCONCOL_NAME:5634}, 
+                '</span>',
+            '</div>',
+            
+            '<div class="mk_knb_card-title">', 
+	'<i class="webcon-ui icon-ic_fluent icon-ic_fluent_tag_20_regular"></i>', 
+                {WFCONCOL:5628}, 
+            '</div>',
+            
+            '<div class="mk_knb_card-meta">',
+                '<div class="mk_meta-item mk_meta-dates">',
+                    '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_calendar_info_20_regular" title="Data rozpoczęcia projektu"></i>', 
+					CONVERT(varchar(10), {WFCONCOL:5644}, 120), 
+					' → ', 
+					'<i class="webcon-ui icon-ic_fluent icon-ic_fluent_calendar_error_20_regular" title="Data zakończenia projektu"></i>', 
+					CONVERT(varchar(10), {WFCONCOL:5639}, 120),
+                '</div>',
+                '<span class="mk_meta-sep">|</span>',
+                '<div class="mk_meta-item mk_meta-days">',
+                    '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_checkmark_starburst_20_regular" title="Dni do końca projektu"></i>',
+                    DATEDIFF(DAY, GETDATE(), {WFCONCOL:5639}), 'd',
+                '</div>',
+            '</div>',
+            
+            '<div class="mk_knb_card-assignees">',
+                '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_person_arrow_right_20_regular" title="Zlecający Projekt"></i> ',
+                {WFCONCOL_NAME:5640},
+                '<span class="mk_meta-sep">|</span>',
+                '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_person_voice_20_regular" title="Prowadzący Projekt"></i> ',
+                {WFCONCOL_NAME:6185},
+            '</div>',
+
+            '<div class="mk_task-section">',
+                '<span class="mk_task-toggle" onclick="WEBCON_Kanban.toggleTasks(this)">',
+                    '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_clipboard_task_list_rtl_20_regular"></i>',
+                    ' Pokaż zadania ', t.OpenTasks, '/', t.TotalTasks,
+                    '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_chevron_down_20_regular mk_chevron"></i>',
+                '</span>',
+                '<a class="mk_add-task" href="/db/1/app/{AP:51}/start/wf/{WF:200}/dt/{DT:210}/form" target="_blank" title="Dodaj zadanie" alt="Dodaj zadanie do projektu">',
+                    '<i class="webcon-ui icon-ic_fluent icon-ic_fluent_add_square_20_regular"></i>',
+                '</a>',
+                '<div class="mk_task-list">',
+                    ISNULL(t.TasksHtml, ''),
+                '</div>',
+            '</div>',
+
+        '</div>'
+    ) AS [Projekt]
+
+FROM [dbo].[WFElements] AS wfee WITH (NOLOCK)
+OUTER APPLY
+(
+    SELECT 
+        -- ZLICZANIE WSZYSTKICH ZADAŃ W PROJEKCIE
+        (SELECT COUNT(*) 
+         FROM WFElements zad 
+         WHERE zad.WFD_DTYPEID = {DT:210}
+           AND zad.{WFCONCOL:6186} = wfee.WFD_ID
+           AND zad.WFD_IsDeleted = 0
+        ) AS TotalTasks,
+
+        -- ZLICZANIE NIEUKOŃCZONYCH ZADAŃ
+        (SELECT COUNT(*)
+         FROM WFElements zad 
+         INNER JOIN WFSteps S WITH (NOLOCK)
+            ON S.STP_ID = zad.WFD_STPID
+         WHERE zad.WFD_DTYPEID = {DT:210}
+           AND zad.{WFCONCOL:6186} = wfee.WFD_ID
+           AND zad.WFD_IsDeleted = 0
+           AND S.STP_Name <> 'Zakończone Zadania'
+        ) AS OpenTasks,
+
+        -- HTML z listą zadań + kolorowanie ukończonych
+        (
+            SELECT
+                CONCAT(
+                    '<div class="mk_task-item">',
+
+                        '<a href="/db/1/app/{AP:51}/element/', 
+                            CAST(zad.WFD_ID AS VARCHAR), 
+                        '" class="mk_task-sig" target="_blank" ',
+
+                            -- DODANE: zielony styl dla ukończonych
+                            CASE 
+                                WHEN S.STP_Name = 'Zakończone Zadania' 
+                                    THEN 'style="color:#2ecc71;"'
+                                ELSE ''
+                            END,
+                        '>', 
+                            zad.WFD_Signature,
+                        '</a>',
+
+                        '<span class="mk_task-title">',
+                            ISNULL(CAST(zad.{WFCONCOL:5646} AS NVARCHAR(MAX)), ''),
+                        '</span>',
+
+                        '<span class="mk_task-avatar" data-name=""></span>',
+
+                    '</div>'
+                )
+            FROM WFElements zad WITH (NOLOCK)
+            INNER JOIN WFSteps S WITH (NOLOCK)
+                ON S.STP_ID = zad.WFD_STPID
+            WHERE zad.WFD_DTYPEID = {DT:210}
+              AND zad.{WFCONCOL:6186} = wfee.WFD_ID
+              AND zad.WFD_IsDeleted = 0
+            FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)') AS TasksHtml
+) t
+
+WHERE wfee.WFD_DTYPEID = {DT:209}
+  AND {WFCONCOL_ID:5643} = 1
+  AND wfee.WFD_IsDeleted = 0
