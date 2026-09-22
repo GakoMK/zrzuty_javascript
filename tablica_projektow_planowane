@@ -66,7 +66,6 @@ FROM [dbo].[WFElements] AS wfee WITH (NOLOCK)
 OUTER APPLY
 (
     SELECT 
-        -- ZLICZANIE WSZYSTKICH ZADAŃ W PROJEKCIE
         (SELECT COUNT(*) 
          FROM WFElements zad 
          WHERE zad.WFD_DTYPEID = {DT:210}
@@ -74,7 +73,6 @@ OUTER APPLY
            AND zad.WFD_IsDeleted = 0
         ) AS TotalTasks,
 
-        -- ZLICZANIE NIEUKOŃCZONYCH ZADAŃ
         (SELECT COUNT(*)
          FROM WFElements zad 
          INNER JOIN WFSteps S WITH (NOLOCK)
@@ -85,7 +83,6 @@ OUTER APPLY
            AND S.STP_Name <> 'Zakończone Zadania'
         ) AS OpenTasks,
 
-        -- HTML z listą zadań + kolorowanie ukończonych
         (
             SELECT
                 CONCAT(
@@ -94,11 +91,11 @@ OUTER APPLY
                         '<a href="/db/1/app/{AP:51}/element/', 
                             CAST(zad.WFD_ID AS VARCHAR), 
                         '" class="mk_task-sig" target="_blank" ',
-
-                            -- DODANE: zielony styl dla ukończonych
+                            
+                            -- ZMIANA KOLORU ZAKOŃCZONYCH ZADAŃ NA FIRMOWY ZIELONY
                             CASE 
                                 WHEN S.STP_Name = 'Zakończone Zadania' 
-                                    THEN 'style="color:#2ecc71;"'
+                                    THEN 'style="color:#8cc63f;"'
                                 ELSE ''
                             END,
                         '>', 
