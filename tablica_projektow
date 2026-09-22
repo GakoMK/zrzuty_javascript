@@ -1,7 +1,8 @@
 <style>
 #mk_knb_main_board {
-    --fluent-blue: #0068C9;
-    --fluent-blue-dark: #0051A0;
+    /* Zaktualizowane zmienne pod firmową kolorystykę */
+    --fluent-blue: #33b2cb; /* Błękitny z grafiki */
+    --fluent-blue-dark: #238b9e;
     --fluent-gray-100: #F3F2F1;
     --fluent-gray-200: #EDE7E2;
     --fluent-gray-300: #D9D4CF;
@@ -37,7 +38,7 @@
 #mk_knb_main_board .box--no-padding,
 #mk_knb_main_board .box--after-border {
   border: 1px solid transparent;
-  background: transparent; /* lub np. inherit */
+  background: transparent; 
   box-shadow: none !important;
 }
 
@@ -75,6 +76,14 @@
     white-space: normal !important;
     max-width: 1px !important;
 }
+
+/* NADPISANIE KOLORÓW NAGŁÓWKÓW WEBCON (Tła kolumn) */
+/* Jeśli w Webconie masz włączone kolory tła nagłówków, te reguły je nadpiszą na firmowe */
+.mk_knb_column:nth-child(1) th { background-color: #33b2cb !important; color: #fff !important; border-bottom: 3px solid #268d9e !important;} /* Błękitny */
+.mk_knb_column:nth-child(2) th { background-color: #fdb913 !important; color: #fff !important; border-bottom: 3px solid #d1970b !important;} /* Żółto-pomarańczowy */
+.mk_knb_column:nth-child(3) th { background-color: #9e1b32 !important; color: #fff !important; border-bottom: 3px solid #781325 !important;} /* Bordowy */
+.mk_knb_column:nth-child(4) th { background-color: #6d6e71 !important; color: #fff !important; border-bottom: 3px solid #525355 !important;} /* Szary */
+.mk_knb_column:nth-child(5) th { background-color: #8cc63f !important; color: #fff !important; border-bottom: 3px solid #6b9a2c !important;} /* Zielony */
 
 .mk_knb_column .upsidePanel__label { background-color: #ffffff; }
 .mk_knb_column .stylePanel { padding: 0px; }
@@ -140,11 +149,12 @@ tr, td, tbody {
     background-color: #f4f4f4;
 }
 
-.mk_knb_planing { border-left: 6px solid #00CCF1; }
-.mk_knb_process { border-left: 6px solid #3D95F6; }
-.mk_knb_tests   { border-left: 6px solid #7200F3; }
-.mk_knb_release { border-left: 6px solid #3DBEB4; }
-.mk_knb_done    { border-left: 6px solid #96C83C; }
+/* NOWE KOLORY KART (zbieżne z nagłówkami) */
+.mk_knb_planing { border-left: 6px solid #33b2cb; } /* Błękitny */
+.mk_knb_process { border-left: 6px solid #fdb913; } /* Żółto-pomarańczowy */
+.mk_knb_tests   { border-left: 6px solid #9e1b32; } /* Bordowy */
+.mk_knb_release { border-left: 6px solid #6d6e71; } /* Ciemny szary ze strzałek */
+.mk_knb_done    { border-left: 6px solid #8cc63f; } /* Zielony */
 
 .mk_knb_card-header {
     display: flex;
@@ -195,8 +205,8 @@ tr, td, tbody {
     color: var(--text-primary);
 
   display: flex;
-  align-items: center; /* wyrównanie ikon + tekst */
-  gap: 6px; /* dystans między ikoną a tekstem – opcjonalnie */
+  align-items: center; 
+  gap: 6px; 
 
 }
 
@@ -223,10 +233,6 @@ tr, td, tbody {
 
 .mk_meta-days {
     color: var(--text-secondary);
-}
-
-.mk_meta-dates {
-    /* font-size: 11px; */
 }
 
 .mk_knb_card-assignees {
@@ -282,14 +288,14 @@ tr, td, tbody {
 .mk_task-section {
     align-items: center;
     display: inline;
-    /* display: block !important; */
     width: 100%;
     padding: 6px 10px;
     gap: 12px;
 }
 
 .mk_task-toggle:hover {
-    color: #981929 !important;
+    /* Zmieniono na bordowy z palety zamiast poprzedniego */
+    color: #9e1b32 !important; 
 }
 
 .mk_task-list {
@@ -339,11 +345,9 @@ tr, td, tbody {
 .mk_chevron.rotated { transform: rotate(180deg); }
 </style>
 
-
 <script>
 window.WEBCON_Kanban = window.WEBCON_Kanban || {};
 
-/* OTWIERANIE/ZAMYKANIE LIST ZADAŃ */
 window.WEBCON_Kanban.toggleTasks = function(toggleElement) {
     const section = toggleElement.closest('.mk_task-section');
     if (!section) return;
@@ -366,7 +370,6 @@ window.WEBCON_Kanban.toggleTasks = function(toggleElement) {
     }
 };
 
-/* ✅ KLUCZOWA FUNKCJA – RÓWNE SZEROKOŚCI KOLUMN */
 function equalizeColumnWidths() {
     const board = document.getElementById("mk_knb_main_board");
     if (!board) return;
@@ -386,7 +389,6 @@ function equalizeColumnWidths() {
     });
 }
 
-/* ✅ GENEROWANIE KOLUMN */
 (function () {
     const container = document.getElementById("Group_5620children");
     if (!container) {
@@ -420,12 +422,7 @@ function equalizeColumnWidths() {
         }
     });
 
-    /* ✅ kluczowe – po wygenerowaniu kolumn */
     setTimeout(equalizeColumnWidths, 150);
-
-    /* ✅ przeliczenie przy zmianie rozmiaru okna */
     window.addEventListener("resize", equalizeColumnWidths);
-
 })();
-
 </script>
